@@ -1,0 +1,605 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios de Estoque</title>
+    <link rel="stylesheet" href="/style.css">
+
+    <style>
+        /* Estilos exclusivos da página de relatórios */
+
+        .relatorio-card {
+            background: #ffffff;
+            padding: 24px;
+            margin: 24px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+            min-width: 0;
+        }
+
+        .relatorio-card h2 {
+            margin-top: 0;
+            margin-bottom: 18px;
+        }
+
+        .filtros-relatorio {
+            display: flex;
+            align-items: end;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .filtro-campo {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 170px;
+        }
+
+        .filtro-campo label {
+            font-weight: 600;
+        }
+
+        .filtro-campo input {
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+
+        .acoes-relatorio {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .acoes-relatorio button,
+        .acoes-relatorio a {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .botao-secundario {
+            color: #374151;
+            background: #e5e7eb;
+            border: 1px solid #d1d5db;
+        }
+
+        .resumo-relatorio {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin: 24px 0;
+        }
+
+        .resumo-item {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-left: 5px solid #64748b;
+        }
+
+        .resumo-item.entradas {
+            border-left-color: #16a34a;
+        }
+
+        .resumo-item.saidas {
+            border-left-color: #dc2626;
+        }
+
+        .resumo-item strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #4b5563;
+            font-size: 14px;
+        }
+
+        .resumo-valor {
+            font-size: 28px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .grafico-item,
+        .ranking-item {
+            margin: 24px 0;
+        }
+
+        .grafico-legenda,
+        .ranking-legenda {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 9px;
+            flex-wrap: wrap;
+        }
+
+        .grafico-fundo {
+            width: 100%;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .grafico-barra {
+            height: 100%;
+            min-width: 0;
+            border-radius: 20px;
+            transition: width 0.35s ease;
+        }
+
+        .grafico-entrada {
+            background: #16a34a;
+        }
+
+        .grafico-saida {
+            background: #dc2626;
+        }
+
+        .grafico-ranking {
+            background: #2563eb;
+        }
+
+        .ranking-posicao {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 28px;
+            height: 28px;
+            margin-right: 7px;
+            background: #eff6ff;
+            border-radius: 50%;
+            font-weight: 700;
+        }
+
+        .tabela-responsiva {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .tabela-responsiva table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tabela-responsiva th,
+        .tabela-responsiva td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .tabela-responsiva th {
+            background: #f8fafc;
+        }
+
+        .estoque-baixo {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        .estoque-normal {
+            color: #15803d;
+            font-weight: 600;
+        }
+
+        .relatorio-vazio {
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            color: #64748b;
+        }
+
+        .navegacao-relatorio {
+            margin: 24px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .relatorio-card {
+                padding: 16px;
+            }
+
+            .resumo-valor {
+                font-size: 24px;
+            }
+
+            .tabela-responsiva th,
+            .tabela-responsiva td {
+                padding: 9px;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <h1>Relatórios de Estoque</h1>
+
+        <!-- Filtros por período -->
+        <section class="relatorio-card">
+            <h2>Filtrar período</h2>
+
+            <form action="/relatorios" method="GET">
+                <div class="filtros-relatorio">
+                    <div class="filtro-campo">
+                        <label for="dataInicio">Data inicial</label>
+                        <input
+                            type="date"
+                            id="dataInicio"
+                            name="dataInicio"
+                            value="<%= dataInicio || '' %>"
+                        >
+                    </div>
+
+                    <div class="filtro-campo">
+                        <label for="dataFim">Data final</label>
+                        <input
+                            type="date"
+                            id="dataFim"
+                            name="dataFim"
+                            value="<%= dataFim || '' %>"
+                        >
+                    </div>
+
+                    <div class="acoes-relatorio">
+                        <button type="submit">Aplicar filtros</button>
+
+                        <a
+                            href="/relatorios"
+                            class="botao-secundario"
+                        >
+                            Limpar filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Indicadores do relatório -->
+        <section class="resumo-relatorio">
+            <div class="resumo-item">
+                <strong>Total de movimentações</strong>
+                <div class="resumo-valor">
+                    <%= movimentacoes.length %>
+                </div>
+            </div>
+
+            <div class="resumo-item entradas">
+                <strong>Unidades que entraram</strong>
+                <div class="resumo-valor">
+                    <%= totalEntradas %>
+                </div>
+            </div>
+
+            <div class="resumo-item saidas">
+                <strong>Unidades que saíram</strong>
+                <div class="resumo-valor">
+                    <%= totalSaidas %>
+                </div>
+            </div>
+
+            <div class="resumo-item">
+                <strong>Produtos cadastrados</strong>
+                <div class="resumo-valor">
+                    <%= produtos.length %>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gráfico 1: entradas x saídas -->
+        
+
+        <!-- Gráfico mensal horizontal -->
+        <section class="relatorio-card">
+            <h2>Entradas x Saídas por mês</h2>
+
+            <p>
+                Compare as quantidades de entradas e saídas em cada mês.
+            </p>
+
+            <div class="legenda-mensal">
+                <span><span class="marcador-entrada"></span> Entradas</span>
+                <span><span class="marcador-saida"></span> Saídas</span>
+            </div>
+
+            <% if (movimentacoesPorMes.length === 0) { %>
+                <p class="relatorio-vazio">
+                    Não existem movimentações no período selecionado.
+                </p>
+            <% } else { %>
+
+                <%
+                    const maiorMovimentoMensal = Math.max(
+                        1,
+                        ...movimentacoesPorMes.map(m =>
+                            Math.max(m.entradas, m.saidas)
+                        )
+                    );
+                %>
+
+                <div class="grafico-meses-horizontal">
+                    <% movimentacoesPorMes.forEach(m => { %>
+                        <div class="coluna-mes">
+                            <div class="barras-mes">
+                                <div
+                                    class="coluna-barra grafico-entrada"
+                                    style="height: <%= (m.entradas / maiorMovimentoMensal) * 100 %>%"
+                                    title="Entradas: <%= m.entradas %>"
+                                >
+                                    <span><%= m.entradas %></span>
+                                </div>
+
+                                <div
+                                    class="coluna-barra grafico-saida"
+                                    style="height: <%= (m.saidas / maiorMovimentoMensal) * 100 %>%"
+                                    title="Saídas: <%= m.saidas %>"
+                                >
+                                    <span><%= m.saidas %></span>
+                                </div>
+                            </div>
+
+                            <div class="nome-mes">
+                                <%= m.nomeMes %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </section>
+
+
+
+        <!-- Histórico detalhado -->
+        <section class="relatorio-card">
+            <h2>Movimentações do período</h2>
+
+            <% if (movimentacoes.length === 0) { %>
+                <p class="relatorio-vazio">
+                    Nenhuma movimentação encontrada para os filtros selecionados.
+                </p>
+            <% } else { %>
+                <div class="tabela-responsiva">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <% movimentacoes.forEach(m => { %>
+                                <tr>
+                                    <td>
+                                        <%= m.data
+                                            ? new Date(m.data).toLocaleString('pt-BR')
+                                            : '-' %>
+                                    </td>
+
+                                    <td>
+                                        <%= m.produtos?.id
+                                            ? 'MAT' + String(m.produtos.id).padStart(3, '0')
+                                            : '-' %>
+                                    </td>
+
+                                    <td>
+                                        <%= m.produtos?.nome || 'Produto não encontrado' %>
+                                    </td>
+
+                                    <td>
+                                        <%= m.tipo %>
+                                    </td>
+
+                                    <td>
+                                        <%= m.quantidade %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </section>
+
+        <!-- Ranking em tabela -->
+        <section class="relatorio-card">
+            <h2>Produtos mais movimentados</h2>
+            <p>Ranking baseado na soma das quantidades de entradas e saídas.</p>
+
+            <% if (produtosRanking.length === 0) { %>
+                <p class="relatorio-vazio">
+                    Ainda não existem produtos com movimentações no período.
+                </p>
+            <% } else { %>
+                <div class="tabela-responsiva">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Posição</th>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Entradas</th>
+                                <th>Saídas</th>
+                                <th>Total movimentado</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <% produtosRanking.forEach((p, index) => { %>
+                                <tr>
+                                    <td><%= index + 1 %>º</td>
+
+                                    <td>
+                                        <%= 'MAT' + String(p.id).padStart(3, '0') %>
+                                    </td>
+
+                                    <td><%= p.nome %></td>
+
+                                    <td><%= p.entradas %></td>
+
+                                    <td><%= p.saidas %></td>
+
+                                    <td><strong><%= p.totalMovimentado %></strong></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </section>
+
+        <!-- Gráfico 2: ranking visual -->
+        <section class="relatorio-card">
+            <h2>Ranking visual de produtos</h2>
+            <p>Os produtos com maior volume movimentado aparecem com barras maiores.</p>
+
+            <%
+                const maiorRanking = Math.max(
+                    1,
+                    ...produtosRanking.map(p => p.totalMovimentado || 0)
+                );
+            %>
+
+            <% if (produtosRanking.length === 0) { %>
+                <p class="relatorio-vazio">
+                    Não há dados suficientes para montar o ranking visual.
+                </p>
+            <% } else { %>
+                <% produtosRanking.forEach((p, index) => {
+                    const largura = (p.totalMovimentado / maiorRanking) * 100;
+                %>
+                    <div class="ranking-item">
+                        <div class="ranking-legenda">
+                            <span>
+                                <span class="ranking-posicao"><%= index + 1 %></span>
+                                <strong><%= p.nome %></strong>
+                                <small>
+                                    ( <%= 'MAT' + String(p.id).padStart(3, '0') %> )
+                                </small>
+                            </span>
+
+                            <strong><%= p.totalMovimentado %> unidade(s)</strong>
+                        </div>
+
+                        <div
+                            class="grafico-fundo"
+                            role="img"
+                            aria-label="<%= p.nome %>: <%= p.totalMovimentado %> unidades movimentadas"
+                        >
+                            <div
+                                class="grafico-barra grafico-ranking"
+                                style="width: <%= largura %>%"
+                            ></div>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } %>
+        </section>
+
+        <!-- Estoque atual -->
+        <section class="relatorio-card">
+            <h2>Situação atual do estoque</h2>
+            <p>
+                Esta tabela mostra o estoque atual dos produtos cadastrados.
+                Ela não é limitada pelo período dos filtros.
+            </p>
+
+            <% if (produtos.length === 0) { %>
+                <p class="relatorio-vazio">
+                    Nenhum produto cadastrado.
+                </p>
+            <% } else { %>
+                <div class="tabela-responsiva">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Quantidade atual</th>
+                                <th>Estoque mínimo</th>
+                                <th>Situação</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <% produtos.forEach(p => {
+                                const estoqueBaixo =
+                                    Number(p.quantidade) <= Number(p.estoque_minimo);
+                            %>
+                                <tr>
+                                    <td>
+                                        <%= 'MAT' + String(p.id).padStart(3, '0') %>
+                                    </td>
+
+                                    <td><%= p.nome %></td>
+
+                                    <td><%= p.quantidade %></td>
+
+                                    <td><%= p.estoque_minimo %></td>
+
+                                    <td>
+                                        <% if (estoqueBaixo) { %>
+                                            <span class="estoque-baixo">
+                                                Estoque baixo
+                                            </span>
+                                        <% } else { %>
+                                            <span class="estoque-normal">
+                                                Normal
+                                            </span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </section>
+
+        <!-- Exportação CSV -->
+        <section class="relatorio-card">
+            <h2>Exportar relatório</h2>
+
+            <p>
+                Baixe as movimentações do período selecionado em CSV,
+                para abrir em programas como o Microsoft Excel.
+            </p>
+
+            <div class="acoes-relatorio">
+                <a
+                    href="/relatorios/exportar?dataInicio=<%= encodeURIComponent(dataInicio || '') %>&dataFim=<%= encodeURIComponent(dataFim || '') %>"
+                    class="botao"
+                >
+                    Baixar relatório CSV
+                </a>
+            </div>
+        </section>
+
+        <!-- Navegação -->
+        <nav class="navegacao-relatorio">
+            <a href="/">Voltar ao início</a>
+            <a href="/produtos">Ver produtos</a>
+            <a href="/movimentacoes">Ver histórico</a>
+        </nav>
+    </main>
+</body>
+</html>

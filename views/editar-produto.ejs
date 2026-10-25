@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Produto</title>
+</head>
+
+<body>
+
+    <h1>Editar Produto</h1>
+
+    <% if (erro) {
+        let textoErro = '';
+
+        if (erro === 'nome') {
+            textoErro = 'O nome do produto é obrigatório.';
+        } else if (erro === 'numeros') {
+            textoErro = 'Os valores de estoque devem ser números válidos.';
+        } else if (erro === 'negativo') {
+            textoErro = 'Os valores de estoque não podem ser negativos.';
+        } else if (erro === 'limites') {
+            textoErro = 'O estoque máximo não pode ser menor que o mínimo.';
+        } else if (erro === 'servidor') {
+            textoErro = 'Não foi possível atualizar o produto. Tente novamente.';
+        }
+    %>
+        <% if (textoErro) { %>
+            <p class="mensagem-erro" id="mensagemErro">
+                <%= textoErro %>
+            </p>
+
+            <script>
+                setTimeout(() => {
+                    const mensagem = document.getElementById('mensagemErro');
+
+                    if (mensagem) {
+                        mensagem.style.transition = 'opacity 0.5s';
+                        mensagem.style.opacity = '0';
+
+                        setTimeout(() => mensagem.remove(), 500);
+                    }
+                }, 3000);
+            </script>
+        <% } %>
+    <% } %>
+
+    <p>
+        Código:
+        MAT<%= String(produto.id).padStart(3, '0') %>
+    </p>
+
+    <form action="/produtos/<%= produto.id %>/editar" method="POST">
+
+        <label for="nome">Nome do produto:</label>
+        <input
+            type="text"
+            id="nome"
+            name="nome"
+            value="<%= produto.nome %>"
+            required
+        >
+
+        <br><br>
+
+        <label for="estoque_minimo">Estoque mínimo:</label>
+        <input
+            type="number"
+            id="estoque_minimo"
+            name="estoque_minimo"
+            value="<%= produto.estoque_minimo %>"
+            min="0"
+            required
+        >
+
+        <br><br>
+
+        <label for="estoque_maximo">Estoque máximo:</label>
+        <input
+            type="number"
+            id="estoque_maximo"
+            name="estoque_maximo"
+            value="<%= produto.estoque_maximo %>"
+            min="0"
+            required
+        >
+
+        <br><br>
+
+        <p>
+            Estoque atual: <%= produto.quantidade %>
+        </p>
+
+        <button type="submit">Salvar alterações</button>
+
+    </form>
+
+    <br>
+
+    <a href="/produtos">Voltar para produtos</a>
+
+</body>
+</html>

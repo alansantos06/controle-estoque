@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Produtos - Controle de Estoque</title>
+</head>
+
+<body>
+
+    <h1>Produtos</h1>
+
+
+    
+    <%
+        let textoMensagem = '';
+        let classeMensagem = '';
+
+        if (mensagem === 'editado') {
+            textoMensagem = 'Produto atualizado com sucesso!';
+            classeMensagem = 'mensagem-sucesso';
+        } else if (mensagem === 'excluido') {
+            textoMensagem = 'Produto excluído com sucesso!';
+            classeMensagem = 'mensagem-sucesso';
+        } else if (erro === 'possuiMovimentacoes') {
+            textoMensagem = 'Não é possível excluir este produto porque ele possui movimentações.';
+            classeMensagem = 'mensagem-erro';
+        } else if (erro === 'excluir') {
+            textoMensagem = 'Não foi possível excluir o produto. Tente novamente.';
+            classeMensagem = 'mensagem-erro';
+        
+        } else if (mensagem === 'entradaRegistrada') {
+            textoMensagem = 'Entrada registrada com sucesso!';
+            classeMensagem = 'mensagem-sucesso';
+        
+        } else if (mensagem === 'saidaRegistrada') 
+            textoMensagem = 'Saída registrada com sucesso!';
+            classeMensagem = 'mensagem-sucesso';
+    %>
+
+    <% if (textoMensagem) { %>
+        <p class="<%= classeMensagem %>" id="mensagemProdutos">
+            <%= textoMensagem %>
+        </p>
+
+        <script>
+            setTimeout(() => {
+                const mensagem = document.getElementById('mensagemProdutos');
+
+                if (mensagem) {
+                    mensagem.style.transition = 'opacity 0.5s';
+                    mensagem.style.opacity = '0';
+
+                    setTimeout(() => mensagem.remove(), 500);
+                }
+            }, 3000);
+        </script>
+    <% } %>
+
+
+    
+    <% if (mensagem === 'editado') { %>
+        <p class="mensagem-sucesso" id="mensagemEditado">
+            Produto atualizado com sucesso!
+        </p>
+
+        <script>
+            setTimeout(() => {
+                const mensagem = document.getElementById('mensagemEditado');
+
+                if (mensagem) {
+                    mensagem.style.transition = 'opacity 0.5s';
+                    mensagem.style.opacity = '0';
+
+                    setTimeout(() => mensagem.remove(), 500);
+                }
+            }, 3000);
+        </script>
+    <% } %>
+
+    
+    
+    <% if (mensagem === 'cadastrado') { %>
+        <p class="mensagem-sucesso" id="mensagemSucesso">
+            Produto cadastrado com sucesso!
+        </p>
+
+        <script>
+            setTimeout(() => {
+                const mensagem = document.getElementById('mensagemSucesso');
+
+                if (mensagem) {
+                    mensagem.style.transition = 'opacity 0.5s';
+                    mensagem.style.opacity = '0';
+
+                    setTimeout(() => {
+                        mensagem.remove();
+                    }, 500);
+                }
+            }, 3000);
+        </script>
+    <% } %>
+    
+
+    <a href="/">
+        <button type="button">Voltar ao início</button>
+    </a>
+
+    
+<form action="/produtos" method="GET">
+
+    <label for="busca">Pesquisar por nome ou código:</label>
+
+    <input
+        type="text"
+        id="busca"
+        name="busca"
+        placeholder="Nome ou código"
+        value="<%= busca %>"
+    >
+
+    <label for="estoqueBaixo">
+        <input
+            type="checkbox"
+            id="estoqueBaixo"
+            name="estoqueBaixo"
+            value="sim"
+            <%= estoqueBaixo === 'sim' ? 'checked' : '' %>
+        >
+        Mostrar somente produtos com estoque baixo
+    </label>
+
+    <button type="submit">Buscar / Filtrar</button>
+
+    <a href="/produtos">
+        <button type="button">Limpar filtros</button>
+    </a>
+
+</form>
+
+<br>
+
+    
+
+    <br>
+
+    <a href="/produtos/novo">
+        <button>Novo Produto</button>
+    </a>
+    <a href="/movimentacoes/nova">
+        <button>Nova Movimentação</button>
+    </a>
+
+    <% if (produtos.length === 0) { %>
+
+        <p>Nenhum produto cadastrado.</p>
+
+    <% } else { %>
+
+        <table border="1">
+
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>Estoque</th>
+                    <th>Estoque mínimo</th>
+                    <th>Estoque máximo</th>
+                </tr>
+
+            
+            </thead>
+
+            <tbody>
+
+                <% produtos.forEach(produto => { %>
+
+                    <tr>
+                        <td>MAT<%= String(produto.id).padStart(3, '0') %></td>
+
+                        <td><%= produto.nome %></td>
+
+                        <td>
+                            <%= produto.quantidade %>
+
+                            <% if (produto.quantidade <= produto.estoque_minimo) { %>
+                                ⚠️ Estoque baixo
+                            <% } %>
+                        </td>
+                        <td><%= produto.estoque_minimo %></td>
+
+                        <td><%= produto.estoque_maximo %></td>
+
+                        <td>
+                            <a href="/produtos/<%= produto.id %>/editar">
+                                <button>Editar</button>
+                            </a>
+
+                            <form
+                                action="/produtos/<%= produto.id %>/excluir"
+                                method="POST"
+                                style="display: inline;"
+                            >
+                                <button
+                                    type="submit"
+                                    onclick="return confirm('Tem certeza que deseja excluir este produto?')"
+                                >
+                                    Excluir
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+
+                <% }) %>
+
+            </tbody>
+
+        </table>
+
+    <% } %>
+
+</body>
+</html>
