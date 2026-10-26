@@ -1,18 +1,177 @@
 const express = require('express');
-const supabase = require('./supabase');
+const session = require('express-session');
+const { csrfSync } = require('csrf-sync');
+
+const {
+    supabase,
+    supabaseAuth,
+    supabaseAdmin
+} = require('./supabase');
 
 const app = express();
 
-app.use(express.urlencoded({ extended: true }));
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 8
+    }
+}));
 
+const {
+    generateToken,
+    csrfSynchronisedProtection
+} = csrfSync({
+    getTokenFromRequest: (req) => req.body?._csrf
+});
+
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+app.use(csrfSynchronisedProtection);
+
+app.use((req, res, next) => {
+    res.locals.csrfToken = generateToken(req);
+    next();
+});
 const PORT = 3000;
+
+
+ // Verificar se o usuário está autenticado
+function exigirLogin(req, res, next) {
+    if (req.session && req.session.usuario) {
+        return next();
+    }
+
+    return res.redirect('/login');
+}
+
+
+function exigirAdministrador(req, res, next) {
+    const emailUsuario = req.session?.usuario?.email
+        ?.trim()
+        .toLowerCase();
+
+    const emailAdministrador = process.env.ADMIN_EMAIL
+        ?.trim()
+        .toLowerCase();
+
+    if (!emailUsuario) {
+        return res.redirect('/login');
+    }
+
+    if (
+        !emailAdministrador ||
+        emailUsuario !== emailAdministrador
+    ) {
+        return res.status(403).send(
+            'Acesso negado. Somente o administrador pode realizar esta ação.'
+        );
+    }
+
+    return next();
+}
+
+
+// Proteger as páginas e operações do sistema
+app.use((req, res, next) => {
+    const rotasPublicas = ['/login'];
+
+    if (rotasPublicas.includes(req.path)) {
+        return next();
+    }
+
+    return exigirLogin(req, res, next);
+});
+
 
 // Configuração do EJS
 app.set('view engine', 'ejs');
 
 // Página inicial
+
+
+ // Página de login
+app.get('/login', (req, res) => {
+    if (req.session.usuario) {
+        return res.redirect('/');
+    }
+
+    res.render('login', { erro: '' });
+});
+
+// Processar login
+app.post('/login', async (req, res) => {
+    try {
+        const email = String(req.body.email || '').trim();
+        const senha = String(req.body.senha || '');
+
+        if (!email || !senha) {
+            return res.status(400).render('login', {
+                erro: 'Informe o e-mail e a senha.'
+            });
+        }
+
+        const { data, error } = await supabaseAuth.auth.signInWithPassword({
+            email,
+            password: senha
+        });
+
+        if (error || !data.user) {
+            return res.status(401).render('login', {
+                erro: 'E-mail ou senha incorretos.'
+            });
+        }
+
+        req.session.regenerate((erroSessao) => {
+            if (erroSessao) {
+                console.error('Erro ao criar sessão:', erroSessao);
+                return res.status(500).render('login', {
+                    erro: 'Não foi possível iniciar a sessão.'
+                });
+            }
+
+            req.session.usuario = {
+                id: data.user.id,
+                email: data.user.email
+            };
+
+            req.session.save((erroSalvar) => {
+                if (erroSalvar) {
+                    console.error('Erro ao salvar sessão:', erroSalvar);
+                    return res.status(500).render('login', {
+                        erro: 'Não foi possível salvar a sessão.'
+                    });
+                }
+
+                return res.redirect('/');
+            });
+        });
+    } catch (erro) {
+        console.error('Erro no login:', erro);
+        return res.status(500).render('login', {
+            erro: 'Ocorreu um erro ao tentar entrar.'
+        });
+    }
+});
+
+// Sair do sistema
+app.post('/logout', (req, res) => {
+    req.session.destroy((erro) => {
+        if (erro) {
+            console.error('Erro ao encerrar sessão:', erro);
+            return res.status(500).send('Erro ao sair do sistema.');
+        }
+
+        res.clearCookie('connect.sid');
+        return res.redirect('/login');
+    });
+});
+
 
 app.get('/', async (req, res) => {
     const { data: produtos, error } = await supabase
@@ -277,6 +436,217 @@ app.post('/produtos/:id/excluir', async (req, res) => {
 
     // Confirma a exclusão
     res.redirect('/produtos?mensagem=excluido');
+});
+
+
+
+app.get('/requisicoes', async (req, res) => {
+    try {
+        const { data: requisicoes, error: erroRequisicoes } = await supabase
+            .from('requisicoes')
+            .select(`
+                *,
+                produtos (
+                    id,
+                    nome,
+                    quantidade
+                )
+            `)
+            .order('data_solicitacao', { ascending: false });
+
+        if (erroRequisicoes) {
+            throw erroRequisicoes;
+        }
+
+        const { data: produtos, error: erroProdutos } = await supabase
+            .from('produtos')
+            .select('id, nome, quantidade')
+            .order('nome', { ascending: true });
+
+        if (erroProdutos) {
+            throw erroProdutos;
+        }
+
+        res.render('requisicoes', {
+            requisicoes: requisicoes || [],
+            produtos: produtos || [],
+            mensagem: req.query.mensagem || '',
+            erro: req.query.erro || ''
+        });
+    } catch (erro) {
+        console.error('Erro ao carregar requisições:', erro);
+        res.status(500).send('Erro ao carregar as requisições.');
+    }
+});
+
+
+
+/* Criar uma nova requisição */
+app.post('/requisicoes', async (req, res) => {
+    try {
+        const produtoId = Number(req.body.produto_id);
+        const quantidade = Number(req.body.quantidade);
+        const solicitante = String(req.body.solicitante || '').trim();
+        const observacao = String(req.body.observacao || '').trim();
+
+        if (
+            !Number.isSafeInteger(produtoId) ||
+            produtoId <= 0 ||
+            !Number.isSafeInteger(quantidade) ||
+            quantidade <= 0 ||
+            !solicitante ||
+            solicitante.length > 150 ||
+            observacao.length > 1000
+        ) {
+            return res.redirect(
+                '/requisicoes?erro=' +
+                encodeURIComponent('Preencha os campos corretamente.')
+            );
+        }
+
+        const { data: produto, error: erroProduto } = await supabase
+            .from('produtos')
+            .select('id')
+            .eq('id', produtoId)
+            .maybeSingle();
+
+        if (erroProduto) throw erroProduto;
+
+        if (!produto) {
+            return res.redirect(
+                '/requisicoes?erro=' +
+                encodeURIComponent('O produto selecionado não existe.')
+            );
+        }
+
+        const { error } = await supabase
+            .from('requisicoes')
+            .insert({
+                produto_id: produtoId,
+                quantidade,
+                solicitante,
+                observacao: observacao || null
+            });
+
+        if (error) throw error;
+
+        return res.redirect(
+            '/requisicoes?mensagem=' +
+            encodeURIComponent('Requisição enviada com sucesso!')
+        );
+    } catch (erro) {
+        console.error('Erro ao criar requisição:', erro);
+
+        return res.redirect(
+            '/requisicoes?erro=' +
+            encodeURIComponent('Não foi possível criar a requisição.')
+        );
+    }
+});
+
+
+/* Aprovar uma requisição e descontar o estoque */
+app.post(
+    '/requisicoes/:id/aprovar',
+    exigirAdministrador,
+    async (req, res) => {
+    try {
+        const requisicaoId = Number(req.params.id);
+
+        if (!Number.isSafeInteger(requisicaoId) || requisicaoId <= 0) {
+            return res.redirect(
+                '/requisicoes?erro=' +
+                encodeURIComponent('ID de requisição inválido.')
+            );
+        }
+
+        const { error } = await supabaseAdmin.rpc('aprovar_requisicao', {
+            p_requisicao_id: requisicaoId,
+            p_responsavel: req.session.usuario.email
+        });
+
+        if (error) {
+            console.error('Erro ao aprovar requisição:', error);
+
+            return res.redirect(
+                '/requisicoes?erro=' +
+                encodeURIComponent(error.message)
+            );
+        }
+
+        return res.redirect(
+            '/requisicoes?mensagem=' +
+            encodeURIComponent('Requisição aprovada e estoque atualizado!')
+        );
+    } catch (erro) {
+        console.error('Erro ao aprovar requisição:', erro);
+
+        return res.redirect(
+            '/requisicoes?erro=' +
+            encodeURIComponent('Não foi possível aprovar a requisição.')
+        );
+    }
+});
+
+
+/* Rejeitar uma requisição sem alterar o estoque */
+app.post(
+    '/requisicoes/:id/rejeitar',
+    exigirAdministrador,
+    async (req, res) => {
+    try {
+        const requisicaoId = Number(req.params.id);
+        const motivo = String(req.body.motivo_rejeicao || '').trim();
+
+        if (
+            !Number.isSafeInteger(requisicaoId) ||
+            requisicaoId <= 0 ||
+            !motivo ||
+            motivo.length > 1000
+        ) {
+            return res.redirect(
+                '/requisicoes?erro=' +
+                encodeURIComponent('Informe um ID válido e o motivo da rejeição.')
+            );
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('requisicoes')
+            .update({
+                status: 'Rejeitada',
+                data_decisao: new Date().toISOString(),
+                responsavel_decisao: req.session.usuario.email,
+                motivo_rejeicao: motivo
+            })
+            .eq('id', requisicaoId)
+            .eq('status', 'Pendente')
+            .select('id')
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            return res.redirect(
+                '/requisicoes?erro=' +
+                encodeURIComponent(
+                    'Requisição não encontrada ou já decidida.'
+                )
+            );
+        }
+
+        return res.redirect(
+            '/requisicoes?mensagem=' +
+
+            encodeURIComponent('Requisição rejeitada. O estoque não foi alterado.')
+        );
+    } catch (erro) {
+        console.error('Erro ao rejeitar requisição:', erro);
+
+        return res.redirect(
+            '/requisicoes?erro=' +
+            encodeURIComponent('Não foi possível rejeitar a requisição.')
+        );
+    }
 });
 
 
