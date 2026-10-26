@@ -4,161 +4,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Requisições | Controle de Estoque</title>
+    <title>Requisições | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body class="dashboard-page">
+    <div class="app-layout">
 
-<div class="app-layout">
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon">E</div>
-            <div>
-                <strong>Estoque</strong>
-                <small>Controle de materiais</small>
-            </div>
-        </div>
+        <%- include('partials/sidebar', { paginaAtiva: 'requisicoes' }) %>
 
-        <nav class="sidebar-nav">
-            <a href="/">Dashboard</a>
-            <a href="/produtos">Produtos</a>
-            <a href="/produtos/novo">Cadastrar produto</a>
-            <a href="/movimentacoes/nova">Movimentar estoque</a>
-            <a href="/movimentacoes">Histórico</a>
-            <a href="/relatorios">Relatórios</a>
-            <a href="/requisicoes" class="active">Requisições</a>
-        </nav>
+        <main class="dashboard-main">
 
-        <div class="sidebar-footer">Controle de Estoque</div>
-    </aside>
+            <%- include('partials/header', {
+                paginaAtiva: 'requisicoes',
+                tituloPagina: 'Requisições'
+            }) %>
 
-    <main class="main-content">
-        <header class="page-header">
-            <div>
-                <h1>Requisições de materiais</h1>
-                <p>Solicite materiais e acompanhe as decisões.</p>
-            </div>
-            <a href="/" class="btn-secondary">Voltar ao início</a>
-        </header>
-
-        <% if (mensagem) { %>
-            <div class="mensagem-sucesso"><%= mensagem %></div>
-        <% } %>
-
-        <% if (erro) { %>
-            <div class="mensagem-erro"><%= erro %></div>
-        <% } %>
-
-        <section class="panel-card">
-            <h2>Nova requisição</h2>
-
-            <form action="/requisicoes" method="POST" class="form-grid">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <div class="form-group">
-                    <label for="produto_id">Produto</label>
-                    <select name="produto_id" id="produto_id" required>
-                        <option value="">Selecione um produto</option>
-                        <% produtos.forEach(produto => { %>
-                            <option value="<%= produto.id %>">
-                                <%= produto.nome %> — Estoque: <%= produto.quantidade %>
-                            </option>
-                        <% }) %>
-                    </select>
+            <section class="welcome-panel">
+                <div>
+                    <p class="welcome-label">OPERAÇÕES</p>
+                    <h2>Requisições de materiais</h2>
+                    <p>Solicite materiais e acompanhe as decisões das requisições.</p>
                 </div>
+            </section>
 
-                <div class="form-group">
-                    <label for="quantidade">Quantidade solicitada</label>
-                    <input type="number" name="quantidade" id="quantidade"
-                           min="1" step="1" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="solicitante">Nome do solicitante</label>
-                    <input type="text" name="solicitante" id="solicitante"
-                           maxlength="150" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="observacao">Observação (opcional)</label>
-                    <textarea name="observacao" id="observacao"
-                              rows="3" maxlength="1000"></textarea>
-                </div>
-
-                <button type="submit" class="btn-primary">
-                    Enviar requisição
-                </button>
-            </form>
-        </section>
-
-        <section class="panel-card">
-            <h2>Requisições registradas</h2>
-
-            <% if (requisicoes.length === 0) { %>
-                <p>Nenhuma requisição cadastrada ainda.</p>
-            <% } else { %>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Produto</th>
-                                <th>Quantidade</th>
-                                <th>Solicitante</th>
-                                <th>Data</th>
-                                <th>Status</th>
-                                <th>Observação</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% requisicoes.forEach(requisicao => { %>
-                                <tr>
-                                    <td>
-                                        <%= requisicao.produtos
-                                            ? requisicao.produtos.nome
-                                            : 'Produto não encontrado' %>
-                                    </td>
-                                    <td><%= requisicao.quantidade %></td>
-                                    <td><%= requisicao.solicitante %></td>
-                                    <td>
-                                        <%= new Date(requisicao.data_solicitacao)
-                                            .toLocaleString('pt-BR') %>
-                                    </td>
-                                    <td>
-                                        <span class="status-requisicao status-<%= requisicao.status.toLowerCase() %>">
-                                            <%= requisicao.status %>
-                                        </span>
-                                    </td>
-                                    <td><%= requisicao.observacao || '-' %></td>
-                                    <td>
-                                        <% if (requisicao.status === 'Pendente') { %>
-                                            <form action="/requisicoes/<%= requisicao.id %>/aprovar"
-                                                  method="POST">
-                                                <button type="submit" class="btn-primary">
-                                                    Aprovar
-                                                </button>
-                                            </form>
-
-                                            <form action="/requisicoes/<%= requisicao.id %>/rejeitar"
-                                                  method="POST">
-                                                <input type="text" name="motivo_rejeicao"
-                                                       placeholder="Motivo da rejeição" required>
-                                                <button type="submit" class="btn-danger">
-                                                    Rejeitar
-                                                </button>
-                                            </form>
-                                        <% } else { %>
-                                            <span>Decidida</span>
-                                        <% } %>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
+            <% if (mensagem) { %>
+                <div class="mensagem-sucesso" id="mensagemSucesso" role="status">
+                    <%= mensagem %>
                 </div>
             <% } %>
-        </section>
-    </main>
-</div>
 
+            <% if (erro) { %>
+                <div class="mensagem-erro" id="mensagemErro" role="alert">
+                    <%= erro %>
+                </div>
+            <% } %>
+
+            <section class="panel-card requisicoes-card">
+                <div class="panel-header">
+                    <div>
+                        <h2>Nova requisição</h2>
+                        <p>Preencha os dados para solicitar um material.</p>
+                    </div>
+                </div>
+
+                <form action="/requisicoes" method="POST" class="formulario-requisicao">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                    <div class="campos-requisicao-grid">
+                        <div class="campo-formulario">
+                            <label for="produto_id">Produto</label>
+                            <select name="produto_id" id="produto_id" required>
+                                <option value="">Selecione um produto</option>
+                                <% produtos.forEach(produto => { %>
+                                    <option value="<%= produto.id %>">
+                                        <%= produto.nome %> — Estoque: <%= produto.quantidade %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+
+                        <div class="campo-formulario">
+                            <label for="quantidade">Quantidade solicitada</label>
+                            <input
+                                type="number"
+                                name="quantidade"
+                                id="quantidade"
+                                min="1"
+                                step="1"
+                                required
+                            >
+                        </div>
+
+                        <div class="campo-formulario">
+                            <label for="solicitante">Nome do solicitante</label>
+                            <input
+                                type="text"
+                                name="solicitante"
+                                id="solicitante"
+                                maxlength="150"
+                                required
+                            >
+                        </div>
+
+                        <div class="campo-formulario campo-observacao">
+                            <label for="observacao">Observação (opcional)</label>
+                            <textarea
+                                name="observacao"
+                                id="observacao"
+                                rows="3"
+                                maxlength="1000"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div class="acoes-formulario">
+                        <button type="submit" class="primary-link botao-salvar">
+                            Enviar requisição
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel-card requisicoes-card">
+                <div class="panel-header">
+                    <div>
+                        <h2>Requisições registradas</h2>
+                        <p>Acompanhe o status e as decisões de cada solicitação.</p>
+                    </div>
+                    <span class="codigo-produto">
+                        Total: <%= requisicoes.length %>
+                    </span>
+                </div>
+
+                <% if (requisicoes.length === 0) { %>
+                    <div class="empty-state">
+                        <span>✓</span>
+                        <p>Nenhuma requisição cadastrada ainda.</p>
+                    </div>
+                <% } else { %>
+
+                    <div class="table-wrapper tabela-requisicoes">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Solicitante</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th>Observação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <% requisicoes.forEach(requisicao => { %>
+                                    <tr>
+                                        <td>
+                                            <%= requisicao.produtos
+                                                ? requisicao.produtos.nome
+                                                : 'Produto não encontrado' %>
+                                        </td>
+
+                                        <td><strong><%= requisicao.quantidade %></strong></td>
+
+                                        <td><%= requisicao.solicitante %></td>
+
+                                        <td>
+                                            <%= new Date(requisicao.data_solicitacao)
+                                                .toLocaleString('pt-BR') %>
+                                        </td>
+
+                                        <td>
+                                            <span class="status-requisicao status-<%= requisicao.status.toLowerCase() %>">
+                                                <%= requisicao.status %>
+                                            </span>
+                                        </td>
+
+                                        <td><%= requisicao.observacao || '-' %></td>
+
+                                        <td>
+                                            <% if (requisicao.status === 'Pendente') { %>
+                                                <div class="acoes-requisicao">
+
+                                                    <form
+                                                        action="/requisicoes/<%= requisicao.id %>/aprovar"
+                                                        method="POST"
+                                                    >
+                                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                                                        <button type="submit" class="botao-aprovar">
+                                                            Aprovar
+                                                        </button>
+                                                    </form>
+
+                                                    <form
+                                                        action="/requisicoes/<%= requisicao.id %>/rejeitar"
+                                                        method="POST"
+                                                        class="form-rejeitar"
+                                                    >
+                                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                                                        <input
+                                                            type="text"
+                                                            name="motivo_rejeicao"
+                                                            placeholder="Motivo da rejeição"
+                                                            aria-label="Motivo da rejeição"
+                                                            required
+                                                        >
+
+                                                        <button type="submit" class="btn-danger">
+                                                            Rejeitar
+                                                        </button>
+                                                    </form>
+
+                                                </div>
+                                            <% } else { %>
+                                                <span>Decidida</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                <% } %>
+            </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+
+    <script>
+        ['mensagemSucesso', 'mensagemErro'].forEach(id => {
+            const mensagem = document.getElementById(id);
+
+            if (mensagem) {
+                setTimeout(() => {
+                    mensagem.style.transition = 'opacity 0.5s';
+                    mensagem.style.opacity = '0';
+
+                    setTimeout(() => mensagem.remove(), 500);
+                }, 3000);
+            }
+        });
+    </script>
 </body>
 </html>

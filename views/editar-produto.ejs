@@ -3,103 +3,154 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Produto</title>
+    <title>Editar produto | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
+<body class="dashboard-page">
+    <div class="app-layout">
 
-<body>
+        <%- include('partials/sidebar', { paginaAtiva: 'produtos' }) %>
 
-    <h1>Editar Produto</h1>
+        <main class="dashboard-main">
 
-    <% if (erro) {
-        let textoErro = '';
+            <%- include('partials/header', {
+                paginaAtiva: 'produtos',
+                tituloPagina: 'Editar produto'
+            }) %>
 
-        if (erro === 'nome') {
-            textoErro = 'O nome do produto é obrigatório.';
-        } else if (erro === 'numeros') {
-            textoErro = 'Os valores de estoque devem ser números válidos.';
-        } else if (erro === 'negativo') {
-            textoErro = 'Os valores de estoque não podem ser negativos.';
-        } else if (erro === 'limites') {
-            textoErro = 'O estoque máximo não pode ser menor que o mínimo.';
-        } else if (erro === 'servidor') {
-            textoErro = 'Não foi possível atualizar o produto. Tente novamente.';
-        }
-    %>
-        <% if (textoErro) { %>
-            <p class="mensagem-erro" id="mensagemErro">
-                <%= textoErro %>
-            </p>
+            <section class="welcome-panel">
+                <div>
+                    <p class="welcome-label">CADASTRO DE MATERIAIS</p>
+                    <h2>Editar produto</h2>
+                    <p>Atualize as informações do produto selecionado.</p>
+                </div>
 
-            <script>
-                setTimeout(() => {
-                    const mensagem = document.getElementById('mensagemErro');
+                <a href="/produtos" class="botao-secundario">
+                    ← Voltar para produtos
+                </a>
+            </section>
 
-                    if (mensagem) {
-                        mensagem.style.transition = 'opacity 0.5s';
-                        mensagem.style.opacity = '0';
+            <section class="panel-card formulario-produto">
 
-                        setTimeout(() => mensagem.remove(), 500);
+                <div class="panel-header">
+                    <div>
+                        <h2>Dados do produto</h2>
+                        <p>Confira os dados antes de salvar as alterações.</p>
+                    </div>
+                    <span class="codigo-produto">
+                        MAT<%= String(produto.id).padStart(3, '0') %>
+                    </span>
+                </div>
+
+                <% if (erro) {
+                    let textoErro = '';
+
+                    if (erro === 'nome') {
+                        textoErro = 'O nome do produto é obrigatório.';
+                    } else if (erro === 'numeros') {
+                        textoErro = 'Os valores de estoque devem ser números válidos.';
+                    } else if (erro === 'negativo') {
+                        textoErro = 'Os valores de estoque não podem ser negativos.';
+                    } else if (erro === 'limites') {
+                        textoErro = 'O estoque máximo não pode ser menor que o mínimo.';
+                    } else if (erro === 'servidor') {
+                        textoErro = 'Não foi possível atualizar o produto. Tente novamente.';
                     }
-                }, 3000);
-            </script>
-        <% } %>
-    <% } %>
+                %>
 
-    <p>
-        Código:
-        MAT<%= String(produto.id).padStart(3, '0') %>
-    </p>
+                    <% if (textoErro) { %>
+                        <div class="mensagem-erro" id="mensagemErro" role="alert">
+                            <%= textoErro %>
+                        </div>
 
-    <form action="/produtos/<%= produto.id %>/editar" method="POST">
+                        <script>
+                            setTimeout(() => {
+                                const mensagem = document.getElementById('mensagemErro');
 
-        <label for="nome">Nome do produto:</label>
-        <input
-            type="text"
-            id="nome"
-            name="nome"
-            value="<%= produto.nome %>"
-            required
-        >
+                                if (mensagem) {
+                                    mensagem.style.transition = 'opacity 0.5s';
+                                    mensagem.style.opacity = '0';
 
-        <br><br>
+                                    setTimeout(() => mensagem.remove(), 500);
+                                }
+                            }, 3000);
+                        </script>
+                    <% } %>
 
-        <label for="estoque_minimo">Estoque mínimo:</label>
-        <input
-            type="number"
-            id="estoque_minimo"
-            name="estoque_minimo"
-            value="<%= produto.estoque_minimo %>"
-            min="0"
-            required
-        >
+                <% } %>
 
-        <br><br>
+                <form action="/produtos/<%= produto.id %>/editar" method="POST"
+                      class="formulario-edicao">
 
-        <label for="estoque_maximo">Estoque máximo:</label>
-        <input
-            type="number"
-            id="estoque_maximo"
-            name="estoque_maximo"
-            value="<%= produto.estoque_maximo %>"
-            min="0"
-            required
-        >
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-        <br><br>
+                    <div class="campo-formulario">
+                        <label for="nome">Nome do produto</label>
+                        <input
+                            type="text"
+                            id="nome"
+                            name="nome"
+                            value="<%= produto.nome %>"
+                            placeholder="Digite o nome do produto"
+                            required
+                        >
+                    </div>
 
-        <p>
-            Estoque atual: <%= produto.quantidade %>
-        </p>
+                    <div class="campos-formulario-grid">
+                        <div class="campo-formulario">
+                            <label for="estoque_minimo">Estoque mínimo</label>
+                            <input
+                                type="number"
+                                id="estoque_minimo"
+                                name="estoque_minimo"
+                                value="<%= produto.estoque_minimo %>"
+                                min="0"
+                                required
+                            >
+                            <small>Quantidade mínima desejada no estoque.</small>
+                        </div>
 
-        <button type="submit">Salvar alterações</button>
+                        <div class="campo-formulario">
+                            <label for="estoque_maximo">Estoque máximo</label>
+                            <input
+                                type="number"
+                                id="estoque_maximo"
+                                name="estoque_maximo"
+                                value="<%= produto.estoque_maximo %>"
+                                min="0"
+                                required
+                            >
+                            <small>Limite máximo planejado para o produto.</small>
+                        </div>
+                    </div>
 
-    </form>
+                    <div class="informacao-estoque">
+                        <span>Quantidade atual em estoque</span>
+                        <strong><%= produto.quantidade %></strong>
+                        <small>A edição destes dados não altera a quantidade atual.</small>
+                    </div>
 
-    <br>
+                    <div class="acoes-formulario">
+                        <a href="/produtos" class="botao-secundario">
+                            Cancelar
+                        </a>
 
-    <a href="/produtos">Voltar para produtos</a>
+                        <button type="submit" class="primary-link botao-salvar">
+                            Salvar alterações
+                        </button>
+                    </div>
 
+                </form>
+            </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
 </body>
 </html>

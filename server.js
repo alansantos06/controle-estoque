@@ -38,6 +38,20 @@ app.use((req, res, next) => {
     res.locals.csrfToken = generateToken(req);
     next();
 });
+
+
+app.use((req, res, next) => {
+    const emailAdministrador = process.env.ADMIN_EMAIL
+        ?.trim()
+        .toLowerCase();
+
+    res.locals.ehAdministrador =
+        req.session.usuario?.email?.trim().toLowerCase() ===
+        emailAdministrador;
+
+    next();
+});
+
 const PORT = 3000;
 
 
@@ -75,6 +89,263 @@ function exigirAdministrador(req, res, next) {
 
     return next();
 }
+
+
+
+
+async function exigirPermissaoMovimentacao(req, res, next) {
+    const emailUsuario = req.session?.usuario?.email
+        ?.trim()
+        .toLowerCase();
+
+    const emailAdministrador = process.env.ADMIN_EMAIL
+        ?.trim()
+        .toLowerCase();
+
+    // O administrador sempre tem permissão
+    if (
+        emailUsuario &&
+        emailAdministrador &&
+        emailUsuario === emailAdministrador
+    ) {
+        return next();
+    }
+
+    // Sem usuário autenticado, não permite continuar
+    if (!req.session?.usuario?.id) {
+        return res.redirect('/login');
+    }
+
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('permissoes_usuarios')
+            .select('pode_movimentar_estoque')
+            .eq('usuario_id', req.session.usuario.id)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Erro ao verificar permissão:', error);
+            return res.status(500).send(
+                'Não foi possível verificar suas permissões.'
+            );
+        }
+
+        if (!data?.pode_movimentar_estoque) {
+            return res.status(403).send(
+                'Você não tem permissão para movimentar o estoque.'
+            );
+        }
+
+        return next();
+    } catch (erro) {
+        console.error('Erro ao verificar permissão:', erro);
+        return res.status(500).send(
+            'Não foi possível verificar suas permissões.'
+        );
+    }
+}
+
+
+// Listar usuários e suas permissões
+app.get(
+    '/admin/permissoes',
+    exigirAdministrador,
+    async (req, res) => {
+        try {
+            const { data: resultado, error: erroUsuarios } =
+                await supabaseAdmin.auth.admin.listUsers({
+                    page: 1,
+                    perPage: 1000
+                });
+
+            if (erroUsuarios) {
+                console.error('Erro ao listar usuários:', erroUsuarios);
+                return res.status(500).send(
+                    'Não foi possível listar os usuários.'
+                );
+            }
+
+            const { data: permissoes, error: erroPermissoes } =
+                await supabaseAdmin
+                    .from('permissoes_usuarios')
+                    .select('usuario_id, pode_movimentar_estoque');
+
+            if (erroPermissoes) {
+                console.error('Erro ao consultar permissões:', erroPermissoes);
+                return res.status(500).send(
+                    'Não foi possível consultar as permissões.'
+                );
+            }
+
+            const mapaPermissoes = new Map(
+                (permissoes || []).map(permissao => [
+                    permissao.usuario_id,
+                    permissao.pode_movimentar_estoque
+                ])
+            );
+
+            const emailAdministrador = process.env.ADMIN_EMAIL
+                ?.trim()
+                .toLowerCase();
+
+            const usuarios = resultado.users.map(usuario => {
+                const ehAdministrador =
+                    usuario.email?.trim().toLowerCase() === emailAdministrador;
+
+                return {
+                    id: usuario.id,
+                    email: usuario.email || '(sem e-mail)',
+                    ehAdministrador,
+                    podeMovimentar: ehAdministrador ||
+                        mapaPermissoes.get(usuario.id) === true
+                };
+            });
+
+            return res.render('permissoes', {
+                usuarios,
+                mensagem: req.query.mensagem || ''
+            });
+        } catch (erro) {
+            console.error('Erro ao carregar permissões:', erro);
+            return res.status(500).send(
+                'Ocorreu um erro ao carregar o gerenciamento de permissões.'
+            );
+        }
+    }
+);
+
+
+// Conceder ou retirar permissão de movimentação
+app.post(
+    '/admin/permissoes/:usuarioId',
+    exigirAdministrador,
+    async (req, res) => {
+        try {
+            const usuarioId = req.params.usuarioId;
+            const acao = req.body.acao;
+
+            if (
+                !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(usuarioId) ||
+                !['conceder', 'retirar'].includes(acao)
+            ) {
+                return res.status(400).send('Dados inválidos.');
+            }
+
+            const emailAdministrador = process.env.ADMIN_EMAIL
+                ?.trim()
+                .toLowerCase();
+
+            const { data: usuario, error: erroUsuario } =
+                await supabaseAdmin.auth.admin.getUserById(usuarioId);
+
+            if (erroUsuario || !usuario.user) {
+                return res.status(404).send('Usuário não encontrado.');
+            }
+
+            if (
+                usuario.user.email?.trim().toLowerCase() === emailAdministrador
+            ) {
+                return res.status(400).send(
+                    'O administrador já possui acesso permanente.'
+                );
+            }
+
+            if (acao === 'conceder') {
+                const { error } = await supabaseAdmin
+                    .from('permissoes_usuarios')
+                    .upsert(
+                        {
+                            usuario_id: usuarioId,
+                            pode_movimentar_estoque: true
+                        },
+                        { onConflict: 'usuario_id' }
+                    );
+
+                if (error) throw error;
+            } else {
+                const { error } = await supabaseAdmin
+                    .from('permissoes_usuarios')
+                    .delete()
+                    .eq('usuario_id', usuarioId);
+
+                if (error) throw error;
+            }
+
+            return res.redirect(
+                '/admin/permissoes?mensagem=' +
+                (acao === 'conceder' ? 'concedida' : 'retirada')
+            );
+        } catch (erro) {
+            console.error('Erro ao alterar permissão:', erro);
+            return res.status(500).send(
+                'Não foi possível alterar a permissão.'
+            );
+        }
+    }
+);
+
+
+
+
+app.get('/admin/permissoes', exigirAdministrador, async (req, res) => {
+    try {
+        const { data: resultado, error: erroUsuarios } =
+            await supabaseAdmin.auth.admin.listUsers({
+                page: 1,
+                perPage: 1000
+            });
+
+        if (erroUsuarios) {
+            console.error('Erro ao listar usuários:', erroUsuarios);
+            return res.status(500).send('Erro ao listar usuários.');
+        }
+
+        const { data: permissoes, error: erroPermissoes } =
+            await supabaseAdmin
+                .from('permissoes_usuarios')
+                .select('usuario_id, pode_movimentar_estoque');
+
+        if (erroPermissoes) {
+            console.error('Erro ao buscar permissões:', erroPermissoes);
+            return res.status(500).send('Erro ao buscar permissões.');
+        }
+
+        const mapaPermissoes = new Map(
+            (permissoes || []).map(p => [
+                p.usuario_id,
+                p.pode_movimentar_estoque
+            ])
+        );
+
+        const emailAdministrador = process.env.ADMIN_EMAIL
+            ?.trim()
+            .toLowerCase();
+
+        const usuarios = resultado.users.map(usuario => {
+            const ehAdministrador =
+                usuario.email?.trim().toLowerCase() === emailAdministrador;
+
+            return {
+                id: usuario.id,
+                email: usuario.email || '(sem e-mail)',
+                ehAdministrador,
+                podeMovimentar:
+                    ehAdministrador ||
+                    mapaPermissoes.get(usuario.id) === true
+            };
+        });
+
+        return res.render('permissoes', {
+            usuarios,
+            mensagem: req.query.mensagem || ''
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir permissões:', erro);
+        return res.status(500).send('Não foi possível carregar as permissões.');
+    }
+});
+
+
 
 
 // Proteger as páginas e operações do sistema
@@ -565,14 +836,18 @@ app.post(
             p_responsavel: req.session.usuario.email
         });
 
+       
         if (error) {
             console.error('Erro ao aprovar requisição:', error);
 
             return res.redirect(
                 '/requisicoes?erro=' +
-                encodeURIComponent(error.message)
+                encodeURIComponent(
+                    'Não foi possível aprovar a requisição. Verifique o estoque e tente novamente.'
+                )
             );
         }
+
 
         return res.redirect(
             '/requisicoes?mensagem=' +
@@ -652,39 +927,52 @@ app.post(
 
 
 
-app.get('/movimentacoes', async (req, res) => {
-    const { tipo } = req.query;
 
-    let consulta = supabase
+app.get('/movimentacoes', async (req, res) => {
+    const { tipo, dataInicial, dataFinal } = req.query;
+
+    let consulta = supabaseAdmin
         .from('movimentacoes')
-        .select(`
-            id,
-            tipo,
-            quantidade,
-            data,
-            produtos (
-                id,
-                nome
-            )
-        `)
+        .select('id, tipo, quantidade, data, produtos(id, nome)')
         .order('data', { ascending: false });
 
     if (tipo === 'Entrada' || tipo === 'Saída') {
         consulta = consulta.eq('tipo', tipo);
     }
 
+    if (dataInicial) {
+        consulta = consulta.gte('data', `${dataInicial}T00:00:00`);
+    }
+
+    if (dataFinal) {
+        const diaSeguinte = new Date(`${dataFinal}T12:00:00`);
+        diaSeguinte.setDate(diaSeguinte.getDate() + 1);
+
+        const ano = diaSeguinte.getFullYear();
+        const mes = String(diaSeguinte.getMonth() + 1).padStart(2, '0');
+        const dia = String(diaSeguinte.getDate()).padStart(2, '0');
+
+        consulta = consulta.lt(
+            'data',
+            `${ano}-${mes}-${dia}T00:00:00`
+        );
+    }
+
     const { data: movimentacoes, error } = await consulta;
 
     if (error) {
-        console.error(error);
-        return res.status(500).send('Erro ao consultar o histórico');
+        console.error('Erro ao buscar movimentações:', error);
+        return res.status(500).send('Erro ao carregar o histórico.');
     }
 
     res.render('historico', {
-        movimentacoes,
-        tipoSelecionado: tipo || 'Todos'
+        movimentacoes: movimentacoes || [],
+        tipoSelecionado: tipo || 'Todos',
+        dataInicial: dataInicial || '',
+        dataFinal: dataFinal || ''
     });
 });
+
 
 
 app.get('/relatorios', async (req, res) => {
@@ -929,7 +1217,10 @@ app.get('/relatorios/exportar', async (req, res) => {
 
 
  // Registrar movimentação
-app.post('/movimentacoes', async (req, res) => {
+app.post(
+    '/movimentacoes',
+    exigirPermissaoMovimentacao,
+    async (req, res) => {
 
     const { produto_id, tipo, quantidade } = req.body;
 

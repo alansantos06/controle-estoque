@@ -517,15 +517,24 @@ body.dashboard-page {
     min-height: 100vh;
 }
 
+
 .sidebar {
     width: 250px;
     min-width: 250px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     padding: 24px 14px 16px;
     background: var(--sidebar-bg);
     color: var(--sidebar-text);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
+
 
 .sidebar-brand {
     display: flex;
@@ -1099,4 +1108,910 @@ body.dashboard-page {
 .logout-button:hover {
     background: rgba(128, 128, 128, 0.12);
 }
+
+/* ========================================
+   PÁGINA DE PERMISSÕES DE USUÁRIOS
+======================================== */
+
+.dashboard-page .panel-card {
+    width: 100%;
+    padding: 28px;
+    margin-bottom: 24px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.dashboard-page .panel-card h2 {
+    margin: 0 0 8px;
+    font-size: 1.35rem;
+}
+
+.dashboard-page .panel-card > div:first-child p {
+    margin: 0 0 24px;
+    color: var(--text-secondary, #64748b);
+    line-height: 1.6;
+}
+
+.dashboard-page .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 12px;
+}
+
+.dashboard-page .dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.dashboard-page .dashboard-table th,
+.dashboard-page .dashboard-table td {
+    padding: 16px;
+    vertical-align: middle;
+}
+
+.dashboard-page .dashboard-table th {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.dashboard-page .dashboard-table td {
+    font-size: 0.94rem;
+}
+
+.dashboard-page .dashboard-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.dashboard-page .dashboard-table tbody tr:hover {
+    background-color: rgba(22, 163, 74, 0.06);
+}
+
+.dashboard-page .dashboard-table td form {
+    margin: 0;
+}
+
+.dashboard-page .dashboard-table button {
+    min-height: 38px;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 8px;
+    background-color: #15803d;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease,
+                transform 0.2s ease;
+}
+
+.dashboard-page .dashboard-table button:hover {
+    background-color: #166534;
+    transform: translateY(-1px);
+}
+
+.dashboard-page .dashboard-table button.logout-button {
+    background-color: #dc2626;
+}
+
+.dashboard-page .dashboard-table button.logout-button:hover {
+    background-color: #b91c1c;
+}
+
+/* Indicadores de permissão */
+
+.dashboard-page .status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.dashboard-page .status-badge.status-success {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.dashboard-page .status-badge.status-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* Mensagens de retorno */
+
+.dashboard-page .mensagem-sucesso {
+    margin: 20px 0;
+    padding: 14px 16px;
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    background-color: #f0fdf4;
+    color: #166534;
+    line-height: 1.5;
+}
+
+/* Ajustes para telas menores */
+
+@media (max-width: 760px) {
+    .dashboard-page .panel-card {
+        padding: 18px;
+    }
+
+    .dashboard-page .dashboard-table th,
+    .dashboard-page .dashboard-table td {
+        padding: 12px;
+    }
+
+    .dashboard-page .dashboard-table button {
+        font-size: 0.82rem;
+        white-space: nowrap;
+    }
+}
+
+
+/* ========================================
+   PÁGINA DE PRODUTOS
+======================================== */
+
+.dashboard-page .filtros-produtos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.dashboard-page .campo-busca {
+    display: flex;
+    flex: 1 1 240px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dashboard-page .campo-busca input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    background: var(--card-background, #ffffff);
+    color: var(--text-color, #1f2937);
+}
+
+.dashboard-page .filtro-estoque {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.dashboard-page .filtro-estoque input {
+    width: 16px;
+    height: 16px;
+}
+
+.dashboard-page .acoes-filtros,
+.dashboard-page .acoes-produtos,
+.dashboard-page .acoes-tabela {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.dashboard-page .acoes-produtos {
+    margin: 24px 0;
+}
+
+.dashboard-page .botao-link,
+.dashboard-page .botao-acao,
+.dashboard-page .botao-secundario {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #15803d;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.dashboard-page .botao-secundario {
+    border: 1px solid var(--border-color, #d1d5db);
+    background: transparent;
+    color: var(--text-color, #1f2937);
+}
+
+.dashboard-page .botao-link:hover,
+.dashboard-page .botao-acao:hover {
+    background: #166534;
+}
+
+.dashboard-page .botao-secundario:hover {
+    background: rgba(100, 116, 139, 0.1);
+}
+
+.dashboard-page .acoes-tabela .form-excluir {
+    margin: 0;
+}
+
+.dashboard-page .botao-excluir {
+    min-height: 38px;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #dc2626;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dashboard-page .botao-excluir:hover {
+    background: #b91c1c;
+}
+
+.dashboard-page .estado-vazio {
+    padding: 32px 16px;
+    text-align: center;
+    border: 1px dashed var(--border-color, #d1d5db);
+    border-radius: 12px;
+}
+
+.dashboard-page .estado-vazio h3 {
+    margin-top: 0;
+}
+
+.dashboard-page .estado-vazio p {
+    color: var(--text-secondary, #64748b);
+}
+
+.dashboard-page .mensagem-erro {
+    margin: 20px 0;
+    padding: 14px 16px;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+@media (max-width: 760px) {
+    .dashboard-page .filtros-produtos {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dashboard-page .acoes-filtros,
+    .dashboard-page .acoes-produtos {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dashboard-page .acoes-filtros > *,
+    .dashboard-page .acoes-produtos > * {
+        width: 100%;
+    }
+}
+
+/* Botão Limpar filtros */
+.dashboard-page .acoes-filtros a.botao-secundario {
+    background-color: #e5e7eb;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.dashboard-page .acoes-filtros a.botao-secundario:hover {
+    background-color: #d1d5db;
+}
+
+/* Botão Nova movimentação */
+.dashboard-page .acoes-produtos a.botao-secundario {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: 1px solid #2563eb;
+}
+
+.dashboard-page .acoes-produtos a.botao-secundario:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+
+
+/* ========================================
+   FORMULÁRIO DE CADASTRO DE PRODUTOS
+======================================== */
+
+.dashboard-page .form-produto {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 28px;
+}
+
+.dashboard-page .campo-produto {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.dashboard-page .campo-produto label {
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.dashboard-page .campo-produto input {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 13px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    background: var(--card-background, #ffffff);
+    color: var(--text-color, #1f2937);
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.dashboard-page .campo-produto input:focus {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+.dashboard-page .campos-estoque {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.dashboard-page .acoes-formulario {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+.dashboard-page .acoes-formulario button {
+    min-height: 42px;
+    padding: 11px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #15803d;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dashboard-page .acoes-formulario button:hover {
+    background: #166534;
+}
+
+.dashboard-page .acoes-formulario .botao-secundario {
+    min-height: 42px;
+    padding: 11px 18px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-color, #1f2937);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-page .acoes-formulario .botao-secundario:hover {
+    background: rgba(100, 116, 139, 0.1);
+}
+
+.dashboard-page #mensagemErro {
+    margin: 20px 0;
+    padding: 14px 16px;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+@media (max-width: 600px) {
+    .dashboard-page .campos-estoque {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-page .acoes-formulario {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-page .acoes-formulario > * {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+
+
+/* Botão Cancelar e voltar */
+.dashboard-page .acoes-formulario .botao-secundario {
+    background-color: #e5e7eb;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.dashboard-page .acoes-formulario .botao-secundario:hover {
+    background-color: #d1d5db;
+}
+
+
+
+/* Campos de seleção do formulário de ajuste */
+.dashboard-page .campo-produto select {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 13px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    background: var(--card-background, #ffffff);
+    color: var(--text-color, #1f2937);
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.dashboard-page .campo-produto select:focus {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+
+
+/* Identificação visual das movimentações */
+.status-entrada,
+.status-saida {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-entrada {
+    color: #15803d;
+    background-color: #dcfce7;
+}
+
+.status-saida {
+    color: #b91c1c;
+    background-color: #fee2e2;
+}
+
+
+
+/* Melhorar a visibilidade dos campos de data no tema escuro */
+html[data-theme="dark"] .dashboard-page input[type="date"] {
+    color-scheme: dark;
+    color: #f9fafb;
+    background-color: #1f2937;
+    border-color: #4b5563;
+}
+
+/* Garantir boa visibilidade no tema claro */
+html[data-theme="light"] .dashboard-page input[type="date"] {
+    color-scheme: light;
+}
+
+
+
+/* Histórico: alinhamento e proporção dos filtros */
+.dashboard-page .filtros-produtos {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 24px;
+    margin-bottom: 28px;
+}
+
+.dashboard-page .filtros-produtos .campo-produto {
+    flex: 0 1 190px;
+    min-width: 150px;
+    margin: 0;
+}
+
+.dashboard-page .filtros-produtos .campo-produto label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.dashboard-page .filtros-produtos .acoes-filtros {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+}
+
+.dashboard-page .filtros-produtos .acoes-filtros button,
+.dashboard-page .filtros-produtos .acoes-filtros a {
+    min-height: 42px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+/* Campos de data */
+.dashboard-page .filtros-produtos input[type="date"] {
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    padding: 9px 10px;
+    border: 1px solid var(--border-color, #4b5563);
+    border-radius: 8px;
+    font: inherit;
+}
+
+html[data-theme="dark"] .dashboard-page .filtros-produtos input[type="date"] {
+    color-scheme: dark;
+    color: #f3f4f6;
+    background-color: #1f2937;
+}
+
+html[data-theme="light"] .dashboard-page .filtros-produtos input[type="date"] {
+    color-scheme: light;
+}
+
+
+/* Histórico: hierarquia visual dos títulos */
+.dashboard-page .panel-card > div:first-child h2 {
+    font-size: 1.25rem;
+    margin-bottom: 6px;
+}
+
+.dashboard-page .panel-card > div:first-child p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-top: 0;
+}
+
+/* Campos de data harmonizados com o tema escuro */
+html[data-theme="dark"] .dashboard-page .filtros-produtos input[type="date"] {
+    background-color: #feffff;
+    color: #000000;
+    border: 1px solid #ffffff;
+    border-radius: 8px;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"] .dashboard-page .filtros-produtos input[type="date"]:focus {
+    outline: none;
+    border-color: #2fa537;
+    box-shadow: 0 0 0 2px rgba(1, 255, 43, 0.15);
+}
+
+/* Campos de data no tema claro */
+html[data-theme="light"] .dashboard-page .filtros-produtos input[type="date"] {
+    background-color: #ffffff;
+    color: #1f2937;
+    border: 1px solid #d1d5db;
+    color-scheme: light;
+}
+
+
+/* Cor do ícone do calendário no modo escuro */
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+
+/* Relatórios: botão limpar filtro cinza */
+.filtros-relatorio .botao-secundario {
+    background-color: #e5e7eb;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+
+
+/* Forçar campos de data brancos na página de Relatórios */
+html[data-theme="dark"] .filtros-relatorio input[type="date"],
+html[data-theme="light"] .filtros-relatorio input[type="date"],
+.filtros-relatorio input[type="date"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #222222 !important;
+    border: 1px solid #d1d5db !important;
+    color-scheme: light !important;
+    opacity: 1 !important;
+}
+
+.filtros-relatorio input[type="date"]::-webkit-datetime-edit,
+.filtros-relatorio input[type="date"]::-webkit-datetime-edit-text,
+.filtros-relatorio input[type="date"]::-webkit-datetime-edit-month-field,
+.filtros-relatorio input[type="date"]::-webkit-datetime-edit-day-field,
+.filtros-relatorio input[type="date"]::-webkit-datetime-edit-year-field {
+    color: #222222 !important;
+}
+
+.filtros-relatorio input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none !important;
+    opacity: 1 !important;
+    cursor: pointer;
+}
+
+
+
+
+/* Formulário de edição de produto */
+.formulario-produto {
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.codigo-produto {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.formulario-edicao {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.campo-formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.campo-formulario label {
+    font-weight: 600;
+}
+
+.campo-formulario input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    background: var(--input-bg, #ffffff);
+    color: var(--text-primary, #222222);
+    font: inherit;
+}
+
+.campo-formulario small {
+    color: var(--text-secondary, #6b7280);
+    font-size: 12px;
+}
+
+.campos-formulario-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.informacao-estoque {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 10px;
+}
+
+.informacao-estoque strong {
+    font-size: 26px;
+}
+
+.informacao-estoque small {
+    color: var(--text-secondary, #6b7280);
+}
+
+.acoes-formulario {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.acoes-formulario .botao-secundario {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #e5e7eb;
+    color: #374151;
+    text-decoration: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.acoes-formulario .botao-secundario:hover {
+    background: #d1d5db;
+}
+
+.botao-salvar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 8px;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+@media (max-width: 600px) {
+    .formulario-produto {
+        padding: 16px;
+    }
+
+    .campos-formulario-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .acoes-formulario {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .acoes-formulario > * {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+
+
+/* Botão voltar para produtos - tela de edição */
+.welcome-panel .botao-secundario {
+    background-color: #e5e7eb;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.welcome-panel .botao-secundario:hover {
+    background-color: #d1d5db;
+    color: #1f2937;
+}
+
+
+
+/* Requisições */
+.requisicoes-card {
+    margin-bottom: 24px;
+    min-width: 0;
+}
+
+.formulario-requisicao {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.campos-requisicao-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.campo-formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.campo-formulario label {
+    font-weight: 600;
+}
+
+.campo-formulario input,
+.campo-formulario select,
+.campo-formulario textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 8px;
+    background: var(--surface, #ffffff);
+    color: var(--text, #222222);
+    font: inherit;
+}
+
+.campo-formulario textarea {
+    resize: vertical;
+}
+
+.campo-observacao {
+    grid-column: 1 / -1;
+}
+
+.tabela-requisicoes {
+    overflow-x: auto;
+}
+
+.acoes-requisicao {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 150px;
+}
+
+.acoes-requisicao form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.acoes-requisicao button {
+    padding: 9px 12px;
+    border: none;
+    border-radius: 7px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.botao-aprovar {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.botao-aprovar:hover {
+    background: #bbf7d0;
+}
+
+.form-rejeitar input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 9px;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 7px;
+    background: var(--surface, #ffffff);
+    color: var(--text, #222222);
+}
+
+@media (max-width: 700px) {
+    .campos-requisicao-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .campo-observacao {
+        grid-column: auto;
+    }
+}
+
+
 

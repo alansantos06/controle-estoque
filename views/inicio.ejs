@@ -4,114 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Controle de Estoque</title>
+    <title>Dashboard | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
 </head>
-
 <body class="dashboard-page">
     <div class="app-layout">
 
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-brand">
-                <div class="brand-icon">E</div>
-                <div>
-                    <strong>EstoquePro</strong>
-                    <small>Gestão de almoxarifado</small>
-                    
-                </div>
-            </div>
-
-            <div class="sidebar-section-title">MENU PRINCIPAL</div>
-
-            <nav class="sidebar-nav">
-                <a href="/" class="menu-link ativo">
-                    <span class="menu-icon">▦</span>
-                    Dashboard
-                </a>
-
-                <a href="/produtos" class="menu-link">
-                    <span class="menu-icon">▤</span>
-                    Produtos
-                </a>
-
-                <a href="/produtos/novo" class="menu-link menu-subitem">
-                    <span class="menu-icon">＋</span>
-                    Cadastrar produto
-                </a>
-
-                <a href="/movimentacoes/nova" class="menu-link">
-                    <span class="menu-icon">⇄</span>
-                    Entrada e saída
-                </a>
-
-                <a href="/movimentacoes" class="menu-link">
-                    <span class="menu-icon">◷</span>
-                    Histórico
-                </a>
-
-                <a href="/relatorios" class="menu-link">
-                    <span class="menu-icon">▥</span>
-                    Relatórios
-                </a>
-            </nav>
-
-            <div class="sidebar-section-title">OPERAÇÕES</div>
-
-            <nav class="sidebar-nav">
-                
-                <a href="/requisicoes" class="menu-link">
-                    <span class="menu-icon">⇥</span>
-                    Requisições
-                </a>
-
-
-                <span class="menu-link menu-futuro" title="Funcionalidade ainda não implementada">
-                    <span class="menu-icon">▣</span>
-                    Ajustes de estoque
-                    <small>Em breve</small>
-                </span>
-
-                <span class="menu-link menu-futuro" title="Funcionalidade ainda não implementada">
-                    <span class="menu-icon">🛒</span>
-                    Solicitações de compra
-                    <small>Em breve</small>
-                </span>
-            </nav>
-
-            <div class="sidebar-footer">
-                <span class="status-dot"></span>
-                Sistema de estoque
-                <small>Versão MVP</small>
-                <form action="/logout" method="POST" class="logout-form">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <button type="submit" class="logout-button">
-                        ⇥ Sair do sistema
-                    </button>
-                </form>
-            </div>
-        </aside>
+        <%- include('partials/sidebar', { paginaAtiva: 'inicio' }) %>
 
         <main class="dashboard-main">
 
-            <header class="topbar">
-                <div class="topbar-left">
-                    <button type="button" id="menuBotao"
-                        class="icon-button menu-mobile-button"
-                        aria-label="Abrir menu">
-                        ☰
-                    </button>
-
-                    <div>
-                        <p class="breadcrumb">Início / Dashboard</p>
-                        <h1>Dashboard</h1>
-                    </div>
-                </div>
-
-                <button type="button" id="temaBotao" class="theme-button">
-                    <span id="temaIcone">🌙</span>
-                    <span id="temaTexto">Modo escuro</span>
-                </button>
-            </header>
+            <%- include('partials/header', {
+                paginaAtiva: 'inicio',
+                tituloPagina: 'Dashboard'
+            }) %>
 
             <section class="welcome-panel">
                 <div>
@@ -126,6 +32,7 @@
             </section>
 
             <section class="dashboard-cards">
+
                 <article class="dashboard-card">
                     <div class="card-icon produtos-icon">▤</div>
                     <div>
@@ -152,10 +59,12 @@
                         <small>Produtos que precisam de atenção</small>
                     </div>
                 </article>
+
             </section>
 
             <section class="dashboard-content-grid">
                 <div class="panel-card">
+
                     <div class="panel-header">
                         <div>
                             <h2>Atenção ao estoque</h2>
@@ -166,11 +75,14 @@
                     </div>
 
                     <% if (produtosEstoqueBaixo.length === 0) { %>
+
                         <div class="empty-state">
                             <span>✓</span>
                             <p>Nenhum produto com estoque baixo.</p>
                         </div>
+
                     <% } else { %>
+
                         <div class="table-wrapper">
                             <table class="dashboard-table">
                                 <thead>
@@ -186,7 +98,7 @@
                                     <% produtosEstoqueBaixo.forEach(produto => { %>
                                         <tr>
                                             <td>
-                                                MAT<%= String(produto.id).padStart(4, '0') %>
+                                                MAT<%= String(produto.id).padStart(3, '0') %>
                                             </td>
 
                                             <td><%= produto.nome %></td>
@@ -203,60 +115,19 @@
                                 </tbody>
                             </table>
                         </div>
-                    <% } %>
-                </div>
 
-                
+                    <% } %>
+
+                </div>
             </section>
 
             <footer class="dashboard-footer">
                 Sistema de Controle de Estoque · MVP
             </footer>
+
         </main>
     </div>
 
-    <script>
-        const sidebar = document.getElementById('sidebar');
-        const menuBotao = document.getElementById('menuBotao');
-        const temaBotao = document.getElementById('temaBotao');
-        const temaIcone = document.getElementById('temaIcone');
-        const temaTexto = document.getElementById('temaTexto');
-
-        // Abre e fecha o menu em telas pequenas.
-        menuBotao.addEventListener('click', () => {
-            sidebar.classList.toggle('aberto');
-        });
-
-        document.addEventListener('click', (evento) => {
-            const clicouNoMenu = sidebar.contains(evento.target);
-            const clicouNoBotao = menuBotao.contains(evento.target);
-
-            if (!clicouNoMenu && !clicouNoBotao) {
-                sidebar.classList.remove('aberto');
-            }
-        });
-
-        // Aplica o tema e atualiza o texto do botão.
-        function aplicarTema(tema) {
-            document.documentElement.setAttribute('data-theme', tema);
-
-            const temaEscuro = tema === 'dark';
-
-            temaIcone.textContent = temaEscuro ? '☀️' : '🌙';
-            temaTexto.textContent = temaEscuro ? 'Modo claro' : 'Modo escuro';
-        }
-
-        // Recupera a preferência salva no navegador.
-        const temaSalvo = localStorage.getItem('tema-estoque') || 'light';
-        aplicarTema(temaSalvo);
-
-        temaBotao.addEventListener('click', () => {
-            const temaAtual = document.documentElement.getAttribute('data-theme');
-            const novoTema = temaAtual === 'dark' ? 'light' : 'dark';
-
-            aplicarTema(novoTema);
-            localStorage.setItem('tema-estoque', novoTema);
-        });
-    </script>
+    <script src="/script.js"></script>
 </body>
 </html>

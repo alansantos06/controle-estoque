@@ -1,92 +1,145 @@
+
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico - Controle de Estoque</title>
+    <title>Histórico de movimentações | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
-<body>
 
-    <h1>Histórico de Movimentações</h1>
-    <a href="/">
-        <button type="button">Voltar ao início</button>
-    </a>
+<body class="dashboard-page">
+    <div class="app-layout">
 
-    <form action="/movimentacoes" method="GET">
+        <%- include('partials/sidebar', { paginaAtiva: 'historico' }) %>
 
-        <label for="tipo">Filtrar por tipo:</label>
-        
+        <main class="dashboard-main">
 
-        <select name="tipo" id="tipo">
-            <option value="Todos" <%= tipoSelecionado === 'Todos' ? 'selected' : '' %>>
-                Todos
-            </option>
+            <%- include('partials/header', {
+                tituloPagina: 'Histórico de movimentações'
+            }) %>
 
-            <option value="Entrada" <%= tipoSelecionado === 'Entrada' ? 'selected' : '' %>>
-                Entrada
-            </option>
+            <section class="panel-card">
 
-            <option value="Saída" <%= tipoSelecionado === 'Saída' ? 'selected' : '' %>>
-                Saída
-            </option>
-        </select>
+                <div>
+                    <h2>Registro de movimentações</h2>
+                    <p>Consulte as entradas e saídas registradas no estoque.</p>
+                </div>
 
-        <button type="submit">Filtrar</button>
+               
+                <form action="/movimentacoes" method="GET" class="filtros-produtos">
 
-        <a href="/movimentacoes">
-            <button type="button">Limpar filtro</button>
-        </a>
+                    <div class="campo-produto">
+                        <label for="tipo">Tipo de movimentação</label>
 
-    </form>
+                        <select name="tipo" id="tipo">
+                            <option value="Todos" <%= tipoSelecionado === 'Todos' ? 'selected' : '' %>>
+                                Todas
+                            </option>
 
-    <br>
+                            <option value="Entrada" <%= tipoSelecionado === 'Entrada' ? 'selected' : '' %>>
+                                Entrada
+                            </option>
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Código</th>
-                <th>Produto</th>
-                <th>Tipo</th>
-                <th>Quantidade</th>
-            </tr>
-        </thead>
+                            <option value="Saída" <%= tipoSelecionado === 'Saída' ? 'selected' : '' %>>
+                                Saída
+                            </option>
+                        </select>
+                    </div>
 
-        <tbody>
+                    <div class="campo-produto">
+                        <label for="dataInicial">Data inicial</label>
+                        <input
+                            type="date"
+                            id="dataInicial"
+                            name="dataInicial"
+                            value="<%= dataInicial || '' %>"
+                        >
+                    </div>
 
-            <% movimentacoes.forEach(movimentacao => { %>
+                    <div class="campo-produto">
+                        <label for="dataFinal">Data final</label>
+                        <input
+                            type="date"
+                            id="dataFinal"
+                            name="dataFinal"
+                            value="<%= dataFinal || '' %>"
+                        >
+                    </div>
 
-                <tr>
-                    <td>
-                        <%= new Date(movimentacao.data).toLocaleString('pt-BR') %>
-                    </td>
+                    <div class="acoes-filtros">
+                        <button type="submit">Filtrar</button>
 
-                    <td>
-                        MAT<%= String(movimentacao.produtos.id).padStart(3, '0') %>
-                    </td>
+                        <a href="/movimentacoes" class="botao-secundario">
+                            Limpar filtros
+                        </a>
+                    </div>
 
-                    <td>
-                        <%= movimentacao.produtos.nome %>
-                    </td>
+                </form>
 
-                    <td>
-                        <%= movimentacao.tipo %>
-                    </td>
 
-                    <td>
-                        <%= movimentacao.quantidade %>
-                    </td>
-                </tr>
+                <div class="table-wrapper">
 
-            <% }) %>
+                    <% if (movimentacoes.length === 0) { %>
 
-        </tbody>
-    </table>
+                        <p>Nenhuma movimentação encontrada para esse filtro.</p>
 
-    <br>
+                    <% } else { %>
 
-    <a href="/produtos">Voltar para produtos</a>
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Código</th>
+                                    <th>Produto</th>
+                                    <th>Tipo</th>
+                                    <th>Quantidade</th>
+                                </tr>
+                            </thead>
 
+                            <tbody>
+                                <% movimentacoes.forEach(movimentacao => { %>
+                                    <tr>
+                                        <td>
+                                            <%= new Date(movimentacao.data).toLocaleString('pt-BR') %>
+                                        </td>
+
+                                        <td>
+                                            MAT<%= String(movimentacao.produtos.id).padStart(3, '0') %>
+                                        </td>
+
+                                        <td>
+                                            <%= movimentacao.produtos.nome %>
+                                        </td>
+
+                                        <td>
+                                            <span class="<%= movimentacao.tipo === 'Entrada' ? 'status-entrada' : 'status-saida' %>">
+                                                <%= movimentacao.tipo %>
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <%= movimentacao.quantidade %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+
+                    <% } %>
+
+                </div>
+
+                <div class="acoes-formulario">
+                    <a href="/" class="botao-secundario">Voltar ao início</a>
+                    <a href="/produtos" class="botao-secundario">Voltar para produtos</a>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
 </body>
 </html>

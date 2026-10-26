@@ -1,85 +1,133 @@
+
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Novo Produto</title>
+    <title>Cadastrar produto | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 
-<body>
+<body class="dashboard-page">
+    <div class="app-layout">
 
-    <h1>Cadastrar Novo Produto</h1>
+        <%- include('partials/sidebar', { paginaAtiva: 'novo-produto' }) %>
 
-    
-    <% if (erro === 'nome') { %>
-        <p class="mensagem-erro" id="mensagemErro">
-            O nome do produto é obrigatório.
-        </p>
-    <% } else if (erro === 'numeros') { %>
-        <p class="mensagem-erro" id="mensagemErro">
-            Os valores de estoque devem ser números válidos.
-        </p>
-    <% } else if (erro === 'negativo') { %>
-        <p class="mensagem-erro" id="mensagemErro">
-            Os valores de estoque não podem ser negativos.
-        </p>
-    <% } else if (erro === 'limites') { %>
-        <p class="mensagem-erro" id="mensagemErro">
-            O estoque máximo não pode ser menor que o estoque mínimo.
-        </p>
-    <% } else if (erro === 'servidor') { %>
-        <p class="mensagem-erro" id="mensagemErro">
-            Não foi possível cadastrar o produto. Tente novamente.
-        </p>
-    <% } %>
+        <main class="dashboard-main">
 
-    <% if (erro) { %>
-        <script>
+            <%- include('partials/header', {
+                tituloPagina: 'Cadastrar produto'
+            }) %>
+
+            <section class="panel-card">
+                <div>
+                    <h2>Novo produto</h2>
+                    <p>Preencha os dados para cadastrar um material no almoxarifado.</p>
+                </div>
+
+                <% if (erro === 'nome') { %>
+                    <p class="mensagem-erro" id="mensagemErro">
+                        O nome do produto é obrigatório.
+                    </p>
+                <% } else if (erro === 'numeros') { %>
+                    <p class="mensagem-erro" id="mensagemErro">
+                        Os valores de estoque devem ser números válidos.
+                    </p>
+                <% } else if (erro === 'negativo') { %>
+                    <p class="mensagem-erro" id="mensagemErro">
+                        Os valores de estoque não podem ser negativos.
+                    </p>
+                <% } else if (erro === 'limites') { %>
+                    <p class="mensagem-erro" id="mensagemErro">
+                        O estoque máximo não pode ser menor que o estoque mínimo.
+                    </p>
+                <% } else if (erro === 'servidor') { %>
+                    <p class="mensagem-erro" id="mensagemErro">
+                        Não foi possível cadastrar o produto. Tente novamente.
+                    </p>
+                <% } %>
+
+                <form action="/produtos" method="POST" class="form-produto">
+                    <input
+                        type="hidden"
+                        name="_csrf"
+                        value="<%= csrfToken %>"
+                    >
+
+                    <div class="campo-produto">
+                        <label for="nome">Nome do produto</label>
+                        <input
+                            type="text"
+                            id="nome"
+                            name="nome"
+                            placeholder="Ex.: Parafuso sextavado"
+                            required
+                        >
+                    </div>
+
+                    <div class="campo-produto">
+                        <label for="quantidade">Quantidade inicial</label>
+                        <input
+                            type="number"
+                            id="quantidade"
+                            name="quantidade"
+                            min="0"
+                            placeholder="Informe a quantidade"
+                            required
+                        >
+                    </div>
+
+                    <div class="campos-estoque">
+                        <div class="campo-produto">
+                            <label for="estoque_minimo">Estoque mínimo</label>
+                            <input
+                                type="number"
+                                id="estoque_minimo"
+                                name="estoque_minimo"
+                                min="0"
+                                placeholder="Ex.: 5"
+                                required
+                            >
+                        </div>
+
+                        <div class="campo-produto">
+                            <label for="estoque_maximo">Estoque máximo</label>
+                            <input
+                                type="number"
+                                id="estoque_maximo"
+                                name="estoque_maximo"
+                                min="0"
+                                placeholder="Ex.: 100"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="acoes-formulario">
+                        <button type="submit">Cadastrar produto</button>
+                        <a href="/produtos" class="botao-secundario">
+                            Cancelar e voltar
+                        </a>
+                    </div>
+                </form>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+
+    <script>
+        const mensagemErro = document.getElementById('mensagemErro');
+
+        if (mensagemErro) {
             setTimeout(() => {
-                const mensagem = document.getElementById('mensagemErro');
+                mensagemErro.style.transition = 'opacity 0.5s';
+                mensagemErro.style.opacity = '0';
 
-                if (mensagem) {
-                    mensagem.style.transition = 'opacity 0.5s';
-                    mensagem.style.opacity = '0';
-
-                    setTimeout(() => mensagem.remove(), 500);
-                }
+                setTimeout(() => mensagemErro.remove(), 500);
             }, 3000);
-        </script>
-    <% } %>
-
-
-    <form action="/produtos" method="POST">
-
-        <label for="nome">Nome do produto:</label>
-        <input type="text" id="nome" name="nome" required>
-
-        <br><br>
-
-        <label for="quantidade">Quantidade inicial:</label>
-        <input type="number" id="quantidade" name="quantidade" min="0" required>
-
-        <br><br>
-
-        <label for="estoque_minimo">Estoque mínimo:</label>
-        <input type="number" id="estoque_minimo" name="estoque_minimo" min="0" required>
-
-        <br><br>
-
-        <label for="estoque_maximo">Estoque máximo:</label>
-        <input type="number" id="estoque_maximo" name="estoque_maximo" min="0" required>
-
-        <br><br>
-
-        <button type="submit">Cadastrar</button>
-
-    </form>
-
-    <br>
-
-    <a href="/produtos">Voltar para produtos</a>
-
+        }
+    </script>
 </body>
 </html>

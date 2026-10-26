@@ -1,104 +1,126 @@
 
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nova Movimentação</title>
+    <title>Ajuste de estoque | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 
-<body>
+<body class="dashboard-page">
+    <div class="app-layout">
 
-    <h1>Nova Movimentação</h1>
+        <%- include('partials/sidebar', { paginaAtiva: 'movimentacao' }) %>
 
-    <%
-        let textoErro = '';
+        <main class="dashboard-main">
 
-        if (erro === 'quantidade') {
-            textoErro = 'A quantidade deve ser um número inteiro maior que zero.';
-        } else if (erro === 'tipo') {
-            textoErro = 'Selecione um tipo de movimentação válido.';
-        } else if (erro === 'produto') {
-            textoErro = 'Selecione um produto válido.';
-        } else if (erro === 'estoque') {
-            textoErro = 'Estoque insuficiente para realizar esta saída.';
-        } else if (erro === 'servidor') {
-            textoErro = 'Não foi possível buscar o produto. Tente novamente.';
-        } else if (erro === 'movimentacao') {
-            textoErro = 'Não foi possível registrar a movimentação.';
-        } else if (erro === 'atualizacao') {
-            textoErro = 'A movimentação foi registrada, mas houve um erro ao atualizar o estoque. Confira o estoque antes de tentar novamente.';
-        }
-    %>
+            <%- include('partials/header', {
+                tituloPagina: 'Ajuste de estoque'
+            }) %>
 
-    <% if (textoErro) { %>
-        <p class="mensagem-erro" id="mensagemErro">
-            <%= textoErro %>
-        </p>
+            <section class="panel-card">
+                <div>
+                    <h2>Registrar ajuste de estoque</h2>
+                    <p>Registre entradas ou saídas de materiais e mantenha o estoque atualizado.</p>
+                </div>
 
-        <script>
+                <%
+                    let textoErro = '';
+
+                    if (erro === 'quantidade') {
+                        textoErro = 'A quantidade deve ser um número inteiro maior que zero.';
+                    } else if (erro === 'tipo') {
+                        textoErro = 'Selecione um tipo de movimentação válido.';
+                    } else if (erro === 'produto') {
+                        textoErro = 'Selecione um produto válido.';
+                    } else if (erro === 'estoque') {
+                        textoErro = 'Estoque insuficiente para realizar esta saída.';
+                    } else if (erro === 'servidor') {
+                        textoErro = 'Não foi possível buscar o produto. Tente novamente.';
+                    } else if (erro === 'movimentacao') {
+                        textoErro = 'Não foi possível registrar a movimentação.';
+                    } else if (erro === 'atualizacao') {
+                        textoErro = 'A movimentação foi registrada, mas houve um erro ao atualizar o estoque. Confira o estoque antes de tentar novamente.';
+                    }
+                %>
+
+                <% if (textoErro) { %>
+                    <p class="mensagem-erro" id="mensagemErro">
+                        <%= textoErro %>
+                    </p>
+                <% } %>
+
+                <form action="/movimentacoes" method="POST" class="form-produto">
+                    <input
+                        type="hidden"
+                        name="_csrf"
+                        value="<%= csrfToken %>"
+                    >
+
+                    <div class="campo-produto">
+                        <label for="produto_id">Produto</label>
+                        <select id="produto_id" name="produto_id" required>
+                            <option value="">Selecione um produto</option>
+
+                            <% produtos.forEach(produto => { %>
+                                <option value="<%= produto.id %>">
+                                    MAT<%= String(produto.id).padStart(3, '0') %>
+                                    — <%= produto.nome %>
+                                    — Estoque: <%= produto.quantidade %>
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="campo-produto">
+                        <label for="tipo">Tipo de ajuste</label>
+                        <select id="tipo" name="tipo" required>
+                            <option value="">Selecione o tipo de ajuste</option>
+                            <option value="Entrada">Entrada de estoque</option>
+                            <option value="Saída">Saída de estoque</option>
+                        </select>
+                    </div>
+
+                    <div class="campo-produto">
+                        <label for="quantidade">Quantidade</label>
+                        <input
+                            type="number"
+                            id="quantidade"
+                            name="quantidade"
+                            min="1"
+                            step="1"
+                            placeholder="Informe a quantidade"
+                            required
+                        >
+                    </div>
+
+                    <div class="acoes-formulario">
+                        <button type="submit">Registrar ajuste</button>
+
+                        <a href="/produtos" class="botao-secundario">
+                            Voltar para produtos
+                        </a>
+                    </div>
+                </form>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+
+    <script>
+        const mensagemErro = document.getElementById('mensagemErro');
+
+        if (mensagemErro) {
             setTimeout(() => {
-                const mensagem = document.getElementById('mensagemErro');
+                mensagemErro.style.transition = 'opacity 0.5s';
+                mensagemErro.style.opacity = '0';
 
-                if (mensagem) {
-                    mensagem.style.transition = 'opacity 0.5s';
-                    mensagem.style.opacity = '0';
-
-                    setTimeout(() => mensagem.remove(), 500);
-                }
+                setTimeout(() => mensagemErro.remove(), 500);
             }, 3000);
-        </script>
-    <% } %>
-
-    <form action="/movimentacoes" method="POST">
-
-        <label for="produto_id">Produto:</label>
-
-        <select id="produto_id" name="produto_id" required>
-            <option value="">Selecione um produto</option>
-
-            <% produtos.forEach(produto => { %>
-                <option value="<%= produto.id %>">
-                    MAT<%= String(produto.id).padStart(3, '0') %>
-                    - <%= produto.nome %>
-                    - Estoque: <%= produto.quantidade %>
-                </option>
-            <% }) %>
-        </select>
-
-        <br><br>
-
-        <label for="tipo">Tipo:</label>
-
-        <select id="tipo" name="tipo" required>
-            <option value="">Selecione</option>
-            <option value="Entrada">Entrada</option>
-            <option value="Saída">Saída</option>
-        </select>
-
-        <br><br>
-
-        <label for="quantidade">Quantidade:</label>
-
-        <input
-            type="number"
-            id="quantidade"
-            name="quantidade"
-            min="1"
-            step="1"
-            required
-        >
-
-        <br><br>
-
-        <button type="submit">Registrar movimentação</button>
-
-    </form>
-
-    <br>
-
-    <a href="/produtos">Voltar para produtos</a>
-
+        }
+    </script>
 </body>
 </html>

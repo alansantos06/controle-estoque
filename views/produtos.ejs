@@ -1,225 +1,199 @@
+
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Produtos - Controle de Estoque</title>
+    <title>Produtos | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 
-<body>
+<body class="dashboard-page">
+    <div class="app-layout">
 
-    <h1>Produtos</h1>
+        <%- include('partials/sidebar', { paginaAtiva: 'produtos' }) %>
 
+        <main class="dashboard-main">
 
-    
-    <%
-        let textoMensagem = '';
-        let classeMensagem = '';
+            <%- include('partials/header', {
+                tituloPagina: 'Produtos'
+            }) %>
 
-        if (mensagem === 'editado') {
-            textoMensagem = 'Produto atualizado com sucesso!';
-            classeMensagem = 'mensagem-sucesso';
-        } else if (mensagem === 'excluido') {
-            textoMensagem = 'Produto excluído com sucesso!';
-            classeMensagem = 'mensagem-sucesso';
-        } else if (erro === 'possuiMovimentacoes') {
-            textoMensagem = 'Não é possível excluir este produto porque ele possui movimentações.';
-            classeMensagem = 'mensagem-erro';
-        } else if (erro === 'excluir') {
-            textoMensagem = 'Não foi possível excluir o produto. Tente novamente.';
-            classeMensagem = 'mensagem-erro';
-        
-        } else if (mensagem === 'entradaRegistrada') {
-            textoMensagem = 'Entrada registrada com sucesso!';
-            classeMensagem = 'mensagem-sucesso';
-        
-        } else if (mensagem === 'saidaRegistrada') 
-            textoMensagem = 'Saída registrada com sucesso!';
-            classeMensagem = 'mensagem-sucesso';
-    %>
+            <section class="panel-card">
+                <div>
+                    <h2>Produtos cadastrados</h2>
+                    <p>Consulte, pesquise e gerencie os materiais do almoxarifado.</p>
+                </div>
 
-    <% if (textoMensagem) { %>
-        <p class="<%= classeMensagem %>" id="mensagemProdutos">
-            <%= textoMensagem %>
-        </p>
+                <%
+                    let textoMensagem = '';
+                    let classeMensagem = '';
 
-        <script>
+                    if (mensagem === 'editado') {
+                        textoMensagem = 'Produto atualizado com sucesso!';
+                        classeMensagem = 'mensagem-sucesso';
+                    } else if (mensagem === 'excluido') {
+                        textoMensagem = 'Produto excluído com sucesso!';
+                        classeMensagem = 'mensagem-sucesso';
+                    } else if (mensagem === 'entradaRegistrada') {
+                        textoMensagem = 'Entrada registrada com sucesso!';
+                        classeMensagem = 'mensagem-sucesso';
+                    } else if (mensagem === 'saidaRegistrada') {
+                        textoMensagem = 'Saída registrada com sucesso!';
+                        classeMensagem = 'mensagem-sucesso';
+                    } else if (mensagem === 'cadastrado') {
+                        textoMensagem = 'Produto cadastrado com sucesso!';
+                        classeMensagem = 'mensagem-sucesso';
+                    } else if (erro === 'possuiMovimentacoes') {
+                        textoMensagem = 'Não é possível excluir este produto porque ele possui movimentações.';
+                        classeMensagem = 'mensagem-erro';
+                    } else if (erro === 'excluir') {
+                        textoMensagem = 'Não foi possível excluir o produto. Tente novamente.';
+                        classeMensagem = 'mensagem-erro';
+                    }
+                %>
+
+                <% if (textoMensagem) { %>
+                    <p class="<%= classeMensagem %>" id="mensagemProdutos">
+                        <%= textoMensagem %>
+                    </p>
+                <% } %>
+
+                <form action="/produtos" method="GET" class="filtros-produtos">
+                    <div class="campo-busca">
+                        <label for="busca">Pesquisar por nome ou código</label>
+                        <input
+                            type="text"
+                            id="busca"
+                            name="busca"
+                            placeholder="Ex.: Parafuso ou MAT001"
+                            value="<%= busca || '' %>"
+                        >
+                    </div>
+
+                    <label class="filtro-estoque" for="estoqueBaixo">
+                        <input
+                            type="checkbox"
+                            id="estoqueBaixo"
+                            name="estoqueBaixo"
+                            value="sim"
+                            <%= estoqueBaixo === 'sim' ? 'checked' : '' %>
+                        >
+                        Mostrar somente produtos com estoque baixo
+                    </label>
+
+                    <div class="acoes-filtros">
+                        <button type="submit">Buscar / Filtrar</button>
+                        <a href="/produtos" class="botao-secundario">Limpar filtros</a>
+                    </div>
+                </form>
+
+                <div class="acoes-produtos">
+                    <a href="/produtos/novo" class="botao-link">
+                        + Novo produto
+                    </a>
+                    <a href="/movimentacoes/nova" class="botao-link botao-secundario">
+                        Nova movimentação
+                    </a>
+                </div>
+
+                <% if (produtos.length === 0) { %>
+                    <div class="estado-vazio">
+                        <h3>Nenhum produto encontrado</h3>
+                        <p>Tente alterar os filtros ou cadastre um novo produto.</p>
+                    </div>
+                <% } else { %>
+
+                    <div class="table-wrapper">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome</th>
+                                    <th>Estoque atual</th>
+                                    <th>Estoque mínimo</th>
+                                    <th>Estoque máximo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <% produtos.forEach(produto => { %>
+                                    <tr>
+                                        <td>
+                                            <strong>MAT<%= String(produto.id).padStart(3, '0') %></strong>
+                                        </td>
+
+                                        <td><%= produto.nome %></td>
+
+                                        <td>
+                                            <%= produto.quantidade %>
+
+                                            <% if (produto.quantidade <= produto.estoque_minimo) { %>
+                                                <span class="status-badge status-warning">
+                                                    Estoque baixo
+                                                </span>
+                                            <% } %>
+                                        </td>
+
+                                        <td><%= produto.estoque_minimo %></td>
+                                        <td><%= produto.estoque_maximo %></td>
+
+                                        <td>
+                                            <div class="acoes-tabela">
+                                                <a
+                                                    href="/produtos/<%= produto.id %>/editar"
+                                                    class="botao-acao"
+                                                >
+                                                    Editar
+                                                </a>
+
+                                                <form
+                                                    action="/produtos/<%= produto.id %>/excluir"
+                                                    method="POST"
+                                                    class="form-excluir"
+                                                >
+                                                    <input
+                                                        type="hidden"
+                                                        name="_csrf"
+                                                        value="<%= csrfToken %>"
+                                                    >
+
+                                                    <button
+                                                        type="submit"
+                                                        class="botao-excluir"
+                                                        onclick="return confirm('Tem certeza que deseja excluir este produto?')"
+                                                    >
+                                                        Excluir
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                <% } %>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+
+    <script>
+        const mensagemProdutos = document.getElementById('mensagemProdutos');
+
+        if (mensagemProdutos) {
             setTimeout(() => {
-                const mensagem = document.getElementById('mensagemProdutos');
+                mensagemProdutos.style.transition = 'opacity 0.5s';
+                mensagemProdutos.style.opacity = '0';
 
-                if (mensagem) {
-                    mensagem.style.transition = 'opacity 0.5s';
-                    mensagem.style.opacity = '0';
-
-                    setTimeout(() => mensagem.remove(), 500);
-                }
+                setTimeout(() => mensagemProdutos.remove(), 500);
             }, 3000);
-        </script>
-    <% } %>
-
-
-    
-    <% if (mensagem === 'editado') { %>
-        <p class="mensagem-sucesso" id="mensagemEditado">
-            Produto atualizado com sucesso!
-        </p>
-
-        <script>
-            setTimeout(() => {
-                const mensagem = document.getElementById('mensagemEditado');
-
-                if (mensagem) {
-                    mensagem.style.transition = 'opacity 0.5s';
-                    mensagem.style.opacity = '0';
-
-                    setTimeout(() => mensagem.remove(), 500);
-                }
-            }, 3000);
-        </script>
-    <% } %>
-
-    
-    
-    <% if (mensagem === 'cadastrado') { %>
-        <p class="mensagem-sucesso" id="mensagemSucesso">
-            Produto cadastrado com sucesso!
-        </p>
-
-        <script>
-            setTimeout(() => {
-                const mensagem = document.getElementById('mensagemSucesso');
-
-                if (mensagem) {
-                    mensagem.style.transition = 'opacity 0.5s';
-                    mensagem.style.opacity = '0';
-
-                    setTimeout(() => {
-                        mensagem.remove();
-                    }, 500);
-                }
-            }, 3000);
-        </script>
-    <% } %>
-    
-
-    <a href="/">
-        <button type="button">Voltar ao início</button>
-    </a>
-
-    
-<form action="/produtos" method="GET">
-
-    <label for="busca">Pesquisar por nome ou código:</label>
-
-    <input
-        type="text"
-        id="busca"
-        name="busca"
-        placeholder="Nome ou código"
-        value="<%= busca %>"
-    >
-
-    <label for="estoqueBaixo">
-        <input
-            type="checkbox"
-            id="estoqueBaixo"
-            name="estoqueBaixo"
-            value="sim"
-            <%= estoqueBaixo === 'sim' ? 'checked' : '' %>
-        >
-        Mostrar somente produtos com estoque baixo
-    </label>
-
-    <button type="submit">Buscar / Filtrar</button>
-
-    <a href="/produtos">
-        <button type="button">Limpar filtros</button>
-    </a>
-
-</form>
-
-<br>
-
-    
-
-    <br>
-
-    <a href="/produtos/novo">
-        <button>Novo Produto</button>
-    </a>
-    <a href="/movimentacoes/nova">
-        <button>Nova Movimentação</button>
-    </a>
-
-    <% if (produtos.length === 0) { %>
-
-        <p>Nenhum produto cadastrado.</p>
-
-    <% } else { %>
-
-        <table border="1">
-
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Nome</th>
-                    <th>Estoque</th>
-                    <th>Estoque mínimo</th>
-                    <th>Estoque máximo</th>
-                </tr>
-
-            
-            </thead>
-
-            <tbody>
-
-                <% produtos.forEach(produto => { %>
-
-                    <tr>
-                        <td>MAT<%= String(produto.id).padStart(3, '0') %></td>
-
-                        <td><%= produto.nome %></td>
-
-                        <td>
-                            <%= produto.quantidade %>
-
-                            <% if (produto.quantidade <= produto.estoque_minimo) { %>
-                                ⚠️ Estoque baixo
-                            <% } %>
-                        </td>
-                        <td><%= produto.estoque_minimo %></td>
-
-                        <td><%= produto.estoque_maximo %></td>
-
-                        <td>
-                            <a href="/produtos/<%= produto.id %>/editar">
-                                <button>Editar</button>
-                            </a>
-
-                            <form
-                                action="/produtos/<%= produto.id %>/excluir"
-                                method="POST"
-                                style="display: inline;"
-                            >
-                                <button
-                                    type="submit"
-                                    onclick="return confirm('Tem certeza que deseja excluir este produto?')"
-                                >
-                                    Excluir
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-
-                <% }) %>
-
-            </tbody>
-
-        </table>
-
-    <% } %>
-
+        }
+    </script>
 </body>
 </html>

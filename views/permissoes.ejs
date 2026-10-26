@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permissões de Usuários | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body class="dashboard-page">
+    <div class="app-layout">
+
+        <%- include('partials/sidebar', { paginaAtiva: 'permissoes' }) %>
+
+        <main class="dashboard-main">
+
+            <%- include('partials/header', {
+                paginaAtiva: 'permissoes',
+                tituloPagina: 'Permissões de usuários'
+            }) %>
+
+            <section class="panel-card">
+                <div>
+                    <h2>Gerenciar acessos</h2>
+                    <p>Controle quais usuários podem realizar movimentações no estoque.</p>
+                </div>
+
+                <% if (mensagem === 'concedida') { %>
+                    <p class="mensagem-sucesso">
+                        Permissão concedida com sucesso!
+                    </p>
+                <% } else if (mensagem === 'retirada') { %>
+                    <p class="mensagem-sucesso">
+                        Permissão retirada com sucesso!
+                    </p>
+                <% } %>
+
+                <div class="table-wrapper">
+                    <% if (usuarios.length === 0) { %>
+                        <p>Nenhum usuário encontrado.</p>
+                    <% } else { %>
+
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>E-mail do usuário</th>
+                                    <th>Permissão de acesso</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <% usuarios.forEach(usuario => { %>
+                                    <tr>
+                                        <td>
+                                            <strong><%= usuario.email %></strong>
+                                        </td>
+
+                                        <td>
+                                            <% if (usuario.ehAdministrador) { %>
+                                                <span class="status-badge status-success">
+                                                    Administrador
+                                                </span>
+                                            <% } else if (usuario.podeMovimentar) { %>
+                                                <span class="status-badge status-success">
+                                                    Autorizado
+                                                </span>
+                                            <% } else { %>
+                                                <span class="status-badge status-warning">
+                                                    Sem permissão
+                                                </span>
+                                            <% } %>
+                                        </td>
+
+                                        <td>
+                                            <% if (usuario.ehAdministrador) { %>
+                                                <span>Acesso permanente</span>
+                                            <% } else { %>
+                                                <form
+                                                    action="/admin/permissoes/<%= usuario.id %>"
+                                                    method="POST"
+                                                >
+                                                    <input
+                                                        type="hidden"
+                                                        name="_csrf"
+                                                        value="<%= csrfToken %>"
+                                                    >
+
+                                                    <% if (usuario.podeMovimentar) { %>
+                                                        <input
+                                                            type="hidden"
+                                                            name="acao"
+                                                            value="retirar"
+                                                        >
+
+                                                        <button
+                                                            type="submit"
+                                                            class="logout-button"
+                                                        >
+                                                            Retirar permissão
+                                                        </button>
+                                                    <% } else { %>
+                                                        <input
+                                                            type="hidden"
+                                                            name="acao"
+                                                            value="conceder"
+                                                        >
+
+                                                        <button type="submit">
+                                                            Conceder permissão
+                                                        </button>
+                                                    <% } %>
+                                                </form>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+
+                    <% } %>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
