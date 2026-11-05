@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitações de compra | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dashboard-page">
+    <%
+        const formatarCodigo = (codigo) => '#' + String(codigo).padStart(5, '0');
+        const formatarData = (valor) => valor
+            ? new Date(valor).toLocaleString('pt-BR', {
+                timeZone: 'America/Sao_Paulo',
+                dateStyle: 'short',
+                timeStyle: 'short'
+            })
+            : '';
+        const haFiltros = filtros.codigo || filtros.status || filtros.usuario ||
+            filtros.dataInicial || filtros.dataFinal;
+    %>
+
+    <div class="app-layout">
+
+        <%- include('partials/sidebar', { paginaAtiva: 'compras' }) %>
+
+        <main class="dashboard-main">
+
+            <%- include('partials/header', {
+                paginaAtiva: 'compras',
+                tituloPagina: 'Solicitações de compra'
+            }) %>
+
+            <section class="welcome-panel">
+                <div>
+                    <p class="welcome-label">OPERAÇÕES</p>
+                    <h2>Solicitações de compra</h2>
+                    <p>Peça a compra de produtos e acompanhe cada solicitação até o recebimento.</p>
+                </div>
+
+                <button type="button" class="primary-link" id="botaoNovaSolicitacao" aria-expanded="false" aria-controls="cardNovaSolicitacao">
+                    ＋ Nova solicitação
+                </button>
+            </section>
+
+            <% if (mensagem) { %>
+                <div class="mensagem-sucesso" id="mensagemSucesso" role="status"><%= mensagem %></div>
+            <% } %>
+
+            <% if (erro) { %>
+                <div class="mensagem-erro" id="mensagemErro" role="alert"><%= erro %></div>
+            <% } %>
+
+            <!-- Formulário de nova solicitação (abre pelo botão acima) -->
+            <section class="panel-card requisicoes-card" id="cardNovaSolicitacao" hidden>
+                <div class="panel-header">
+                    <div>
+                        <h2>Nova solicitação de compra</h2>
+                        <p>Adicione os produtos, as quantidades e explique o motivo da compra.</p>
+                    </div>
+                </div>
+
+                <% if (produtos.length === 0) { %>
+                    <div class="empty-state">
+                        <span>!</span>
+                        <p>Cadastre um produto antes de criar uma solicitação de compra.</p>
+                    </div>
+                <% } else { %>
+                    <form action="/compras" method="POST" class="formulario-requisicao">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                        <div class="compra-itens" id="listaItens">
+                            <div class="compra-item">
+                                <div class="campo-formulario">
+                                    <label>Produto</label>
+                                    <select name="produto_id" required>
+                                        <option value="">Selecione um produto</option>
+                                        <% produtos.forEach(produto => { %>
+                                            <option value="<%= produto.id %>">
+                                                <%= produto.nome %> — Estoque: <%= produto.quantidade %>
+                                            </option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+
+                                <div class="campo-formulario compra-item-quantidade">
+                                    <label>Quantidade</label>
+                                    <input type="number" name="quantidade" min="1" step="1" required>
+                                </div>
+
+                                <button type="button" class="compra-remover-item" aria-label="Remover produto" title="Remover produto">✕</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="button" class="compra-botao-secundario" id="botaoAdicionarItem">
+                                ＋ Adicionar outro produto
+                            </button>
+                        </div>
+
+                        <div class="campo-formulario">
+                            <label for="motivo">Motivo da solicitação</label>
+                            <textarea
+                                name="motivo"
+                                id="motivo"
+                                rows="3"
+                                maxlength="1000"
+                                placeholder="Ex.: estoque abaixo do mínimo, demanda do setor X..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div class="acoes-formulario compra-acoes-form">
+                            <button type="button" class="compra-botao-secundario" id="botaoCancelarSolicitacao">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="primary-link">
+                                Enviar solicitação
+                            </button>
+                        </div>
+                    </form>
+                <% } %>
+            </section>
+
+            <!-- Histórico -->
+            <section class="panel-card requisicoes-card">
+                <div class="panel-header">
+                    <div>
+                        <h2>Histórico de solicitações</h2>
+                        <p>
+                            <% if (podeAprovar) { %>
+                                Você pode aprovar, rejeitar e registrar o recebimento das solicitações.
+                            <% } else { %>
+                                Acompanhe o andamento das solicitações de compra.
+                            <% } %>
+                        </p>
+                    </div>
+                    <span class="codigo-produto">Total: <%= solicitacoes.length %></span>
+                </div>
+
+                <form action="/compras" method="GET" class="filtros-produtos compra-filtros">
+                    <div class="campo-produto">
+                        <label for="filtroCodigo">Código</label>
+                        <input type="text" inputmode="numeric" id="filtroCodigo" name="codigo" placeholder="Ex.: 12" value="<%= filtros.codigo %>">
+                    </div>
+
+                    <div class="campo-produto">
+                        <label for="filtroStatus">Status</label>
+                        <select id="filtroStatus" name="status">
+                            <option value="">Todos</option>
+                            <% statusDisponiveis.forEach(status => { %>
+                                <option value="<%= status %>" <%= filtros.status === status ? 'selected' : '' %>><%= status %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="campo-produto compra-filtro-usuario">
+                        <label for="filtroUsuario">Usuário</label>
+                        <select id="filtroUsuario" name="usuario">
+                            <option value="">Todos</option>
+                            <% usuarios.forEach(email => { %>
+                                <option value="<%= email %>" <%= filtros.usuario === email ? 'selected' : '' %>><%= email %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="campo-produto">
+                        <label for="filtroDataInicial">Data inicial</label>
+                        <input type="date" id="filtroDataInicial" name="dataInicial" value="<%= filtros.dataInicial %>">
+                    </div>
+
+                    <div class="campo-produto">
+                        <label for="filtroDataFinal">Data final</label>
+                        <input type="date" id="filtroDataFinal" name="dataFinal" value="<%= filtros.dataFinal %>">
+                    </div>
+
+                    <div class="acoes-filtros">
+                        <button type="submit">Filtrar</button>
+                        <% if (haFiltros) { %>
+                            <a href="/compras" class="botao-secundario">Limpar filtros</a>
+                        <% } %>
+                    </div>
+                </form>
+
+                <% if (solicitacoes.length === 0) { %>
+                    <div class="empty-state">
+                        <span>✓</span>
+                        <p>
+                            <%= haFiltros
+                                ? 'Nenhuma solicitação encontrada para esses filtros.'
+                                : 'Nenhuma solicitação de compra registrada ainda.' %>
+                        </p>
+                    </div>
+                <% } else { %>
+                    <div class="table-wrapper tabela-requisicoes">
+                        <table class="dashboard-table compra-tabela">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Data</th>
+                                    <th>Solicitante</th>
+                                    <th>Produtos</th>
+                                    <th>Motivo</th>
+                                    <th>Status</th>
+                                    <th>Aprovação</th>
+                                    <th>Recebimento</th>
+                                    <% if (podeAprovar) { %><th>Ações</th><% } %>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <% solicitacoes.forEach(solicitacao => { %>
+                                    <tr>
+                                        <td><strong class="compra-codigo"><%= formatarCodigo(solicitacao.codigo) %></strong></td>
+
+                                        <td class="compra-nowrap"><%= formatarData(solicitacao.data_solicitacao) %></td>
+
+                                        <td><%= solicitacao.solicitante_email %></td>
+
+                                        <td>
+                                            <ul class="compra-lista-produtos">
+                                                <% (solicitacao.solicitacoes_compra_itens || []).forEach(item => { %>
+                                                    <li>
+                                                        <span><%= item.produtos ? item.produtos.nome : 'Produto removido' %></span>
+                                                        <strong><%= item.quantidade %></strong>
+                                                    </li>
+                                                <% }) %>
+                                            </ul>
+                                        </td>
+
+                                        <td class="compra-motivo"><%= solicitacao.motivo %></td>
+
+                                        <td>
+                                            <span class="compra-status compra-status-<%= solicitacao.status.toLowerCase() %>">
+                                                <%= solicitacao.status %>
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <% if (solicitacao.aprovador_email) { %>
+                                                <div class="compra-pessoa">
+                                                    <span><%= solicitacao.status === 'Rejeitada' ? 'Rejeitada por' : 'Aprovada por' %></span>
+                                                    <strong><%= solicitacao.aprovador_email %></strong>
+                                                    <small><%= formatarData(solicitacao.data_decisao) %></small>
+                                                    <% if (solicitacao.motivo_rejeicao) { %>
+                                                        <small class="compra-motivo-rejeicao">Motivo: <%= solicitacao.motivo_rejeicao %></small>
+                                                    <% } %>
+                                                </div>
+                                            <% } else { %>
+                                                <span class="compra-vazio">Aguardando</span>
+                                            <% } %>
+                                        </td>
+
+                                        <td>
+                                            <% if (solicitacao.recebedor_email) { %>
+                                                <div class="compra-pessoa">
+                                                    <span>Recebida por</span>
+                                                    <strong><%= solicitacao.recebedor_email %></strong>
+                                                    <small><%= formatarData(solicitacao.data_recebimento) %></small>
+                                                </div>
+                                            <% } else { %>
+                                                <span class="compra-vazio">—</span>
+                                            <% } %>
+                                        </td>
+
+                                        <% if (podeAprovar) { %>
+                                            <td>
+                                                <% if (solicitacao.status === 'Pendente') { %>
+                                                    <div class="acoes-requisicao">
+                                                        <form action="/compras/<%= solicitacao.codigo %>/aprovar" method="POST">
+                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                            <button type="submit" class="botao-aprovar">Aprovar</button>
+                                                        </form>
+
+                                                        <form action="/compras/<%= solicitacao.codigo %>/rejeitar" method="POST" class="form-rejeitar">
+                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                            <input
+                                                                type="text"
+                                                                name="motivo_rejeicao"
+                                                                placeholder="Motivo da rejeição"
+                                                                aria-label="Motivo da rejeição"
+                                                                maxlength="1000"
+                                                                required
+                                                            >
+                                                            <button type="submit" class="compra-botao-rejeitar">Rejeitar</button>
+                                                        </form>
+                                                    </div>
+                                                <% } else if (solicitacao.status === 'Comprada') { %>
+                                                    <div class="acoes-requisicao">
+                                                        <form
+                                                            action="/compras/<%= solicitacao.codigo %>/receber"
+                                                            method="POST"
+                                                            onsubmit="return confirm('Confirmar o recebimento? Os produtos serão adicionados ao estoque.');"
+                                                        >
+                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                            <button type="submit" class="compra-botao-receber">Marcar como recebida</button>
+                                                        </form>
+                                                    </div>
+                                                <% } else { %>
+                                                    <span class="compra-vazio">Concluída</span>
+                                                <% } %>
+                                            </td>
+                                        <% } %>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+            </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+
+    <script>
+        (function () {
+            var card = document.getElementById('cardNovaSolicitacao');
+            var botaoNova = document.getElementById('botaoNovaSolicitacao');
+            var botaoCancelar = document.getElementById('botaoCancelarSolicitacao');
+            var lista = document.getElementById('listaItens');
+            var botaoAdicionar = document.getElementById('botaoAdicionarItem');
+
+            function mostrarFormulario(mostrar) {
+                card.hidden = !mostrar;
+                botaoNova.setAttribute('aria-expanded', String(mostrar));
+                if (mostrar) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    var primeiroCampo = card.querySelector('select, textarea');
+                    if (primeiroCampo) primeiroCampo.focus({ preventScroll: true });
+                }
+            }
+
+            botaoNova.addEventListener('click', function () {
+                mostrarFormulario(card.hidden);
+            });
+
+            if (botaoCancelar) {
+                botaoCancelar.addEventListener('click', function () {
+                    mostrarFormulario(false);
+                });
+            }
+
+            // Só deixa remover quando houver mais de um produto
+            function atualizarBotoesRemover() {
+                var itens = lista ? lista.querySelectorAll('.compra-item') : [];
+                itens.forEach(function (item) {
+                    item.querySelector('.compra-remover-item').disabled = itens.length === 1;
+                });
+            }
+
+            if (lista && botaoAdicionar) {
+                botaoAdicionar.addEventListener('click', function () {
+                    var novo = lista.querySelector('.compra-item').cloneNode(true);
+                    novo.querySelector('select').value = '';
+                    novo.querySelector('input').value = '';
+                    lista.appendChild(novo);
+                    atualizarBotoesRemover();
+                    novo.querySelector('select').focus();
+                });
+
+                lista.addEventListener('click', function (evento) {
+                    var botao = evento.target.closest('.compra-remover-item');
+                    if (botao && lista.querySelectorAll('.compra-item').length > 1) {
+                        botao.closest('.compra-item').remove();
+                        atualizarBotoesRemover();
+                    }
+                });
+
+                atualizarBotoesRemover();
+            }
+
+            // Esconde as mensagens depois de alguns segundos
+            ['mensagemSucesso', 'mensagemErro'].forEach(function (id) {
+                var mensagem = document.getElementById(id);
+                if (mensagem) {
+                    setTimeout(function () {
+                        mensagem.style.transition = 'opacity 0.5s';
+                        mensagem.style.opacity = '0';
+                        setTimeout(function () { mensagem.remove(); }, 500);
+                    }, 4000);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

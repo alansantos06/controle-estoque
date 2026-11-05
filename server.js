@@ -93,6 +93,37 @@ function exigirAdministrador(req, res, next) {
 
 
 
+// Diz se o usuário logado é o administrador ou tem permissão de
+// movimentar o estoque (mesma permissão da tela "Permissões de usuários").
+async function usuarioTemPermissaoMovimentacao(req) {
+    const emailUsuario = req.session?.usuario?.email
+        ?.trim()
+        .toLowerCase();
+
+    const emailAdministrador = process.env.ADMIN_EMAIL
+        ?.trim()
+        .toLowerCase();
+
+    if (emailUsuario && emailAdministrador && emailUsuario === emailAdministrador) {
+        return true;
+    }
+
+    if (!req.session?.usuario?.id) {
+        return false;
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from('permissoes_usuarios')
+        .select('pode_movimentar_estoque')
+        .eq('usuario_id', req.session.usuario.id)
+        .maybeSingle();
+
+    if (error) throw error;
+
+    return data?.pode_movimentar_estoque === true;
+}
+
+
 async function exigirPermissaoMovimentacao(req, res, next) {
     const emailUsuario = req.session?.usuario?.email
         ?.trim()
@@ -1409,7 +1440,289 @@ app.post(
 
 
 
-// eeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+/* ========================================
+   SOLICITAÇÕES DE COMPRA
+======================================== */
+
+const STATUS_COMPRA = ['Pendente', 'Comprada', 'Recebida', 'Rejeitada'];
+
+// Converte "AAAA-MM-DD" (horário de Brasília) em um instante ISO
+function inicioDoDiaBrasilia(dataTexto, diasAMais = 0) {
+    const data = new Date(`${dataTexto}T00:00:00-03:00`);
+    data.setUTCDate(data.getUTCDate() + diasAMais);
+    return data.toISOString();
+}
+
+function redirecionarCompras(res, tipo, texto) {
+    return res.redirect(`/compras?${tipo}=${encodeURIComponent(texto)}`);
+}
+
+function lerCodigoSolicitacao(req) {
+    const codigo = Number(req.params.codigo);
+    return Number.isSafeInteger(codigo) && codigo > 0 ? codigo : null;
+}
+
+
+// Tela de solicitações de compra (formulário + histórico com filtros)
+app.get('/compras', async (req, res) => {
+    try {
+        const filtros = {
+            codigo: String(req.query.codigo || '').replace(/\D/g, ''),
+            status: STATUS_COMPRA.includes(req.query.status) ? req.query.status : '',
+            usuario: String(req.query.usuario || '').trim().toLowerCase(),
+            dataInicial: /^\d{4}-\d{2}-\d{2}$/.test(req.query.dataInicial || '')
+                ? req.query.dataInicial : '',
+            dataFinal: /^\d{4}-\d{2}-\d{2}$/.test(req.query.dataFinal || '')
+                ? req.query.dataFinal : ''
+        };
+
+        let consulta = supabaseAdmin
+            .from('solicitacoes_compra')
+            .select(`
+                *,
+                solicitacoes_compra_itens (
+                    id,
+                    quantidade,
+                    produtos ( id, nome )
+                )
+            `)
+            .order('codigo', { ascending: false });
+
+        if (filtros.codigo) {
+            consulta = consulta.eq('codigo', Number(filtros.codigo));
+        }
+
+        if (filtros.status) {
+            consulta = consulta.eq('status', filtros.status);
+        }
+
+        // Usuário: quem solicitou OU quem aprovou/rejeitou
+        if (filtros.usuario && /^[^\s,()"]+@[^\s,()"]+$/.test(filtros.usuario)) {
+            consulta = consulta.or(
+                `solicitante_email.eq."${filtros.usuario}",aprovador_email.eq."${filtros.usuario}"`
+            );
+        }
+
+        if (filtros.dataInicial) {
+            consulta = consulta.gte('data_solicitacao', inicioDoDiaBrasilia(filtros.dataInicial));
+        }
+
+        if (filtros.dataFinal) {
+            consulta = consulta.lt('data_solicitacao', inicioDoDiaBrasilia(filtros.dataFinal, 1));
+        }
+
+        const [
+            { data: solicitacoes, error: erroSolicitacoes },
+            { data: produtos, error: erroProdutos },
+            { data: listaUsuarios, error: erroUsuarios },
+            podeAprovar
+        ] = await Promise.all([
+            consulta,
+            supabaseAdmin
+                .from('produtos')
+                .select('id, nome, quantidade')
+                .order('nome', { ascending: true }),
+            supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+            usuarioTemPermissaoMovimentacao(req)
+        ]);
+
+        if (erroSolicitacoes) throw erroSolicitacoes;
+        if (erroProdutos) throw erroProdutos;
+        if (erroUsuarios) throw erroUsuarios;
+
+        const usuarios = (listaUsuarios?.users || [])
+            .map(usuario => usuario.email?.trim().toLowerCase())
+            .filter(Boolean)
+            .sort();
+
+        return res.render('compras', {
+            solicitacoes: solicitacoes || [],
+            produtos: produtos || [],
+            usuarios,
+            statusDisponiveis: STATUS_COMPRA,
+            filtros,
+            podeAprovar,
+            mensagem: req.query.mensagem || '',
+            erro: req.query.erro || ''
+        });
+    } catch (erro) {
+        console.error('Erro ao carregar solicitações de compra:', erro);
+        return res.status(500).send(
+            'Erro ao carregar as solicitações de compra. ' +
+            'Verifique se o script database/solicitacoes_compra.sql foi executado no Supabase.'
+        );
+    }
+});
+
+
+// Criar uma nova solicitação de compra
+app.post('/compras', async (req, res) => {
+    try {
+        const motivo = String(req.body.motivo || '').trim();
+        const produtosIds = [].concat(req.body.produto_id || []);
+        const quantidades = [].concat(req.body.quantidade || []);
+
+        if (!motivo || motivo.length > 1000) {
+            return redirecionarCompras(res, 'erro', 'Informe o motivo da solicitação (até 1000 caracteres).');
+        }
+
+        if (produtosIds.length === 0 || produtosIds.length !== quantidades.length || produtosIds.length > 50) {
+            return redirecionarCompras(res, 'erro', 'Adicione de 1 a 50 produtos à solicitação.');
+        }
+
+        // Junta linhas repetidas do mesmo produto somando as quantidades
+        const itensPorProduto = new Map();
+
+        for (let i = 0; i < produtosIds.length; i++) {
+            const produtoId = Number(produtosIds[i]);
+            const quantidade = Number(quantidades[i]);
+
+            if (
+                !Number.isSafeInteger(produtoId) || produtoId <= 0 ||
+                !Number.isSafeInteger(quantidade) || quantidade <= 0 || quantidade > 1000000
+            ) {
+                return redirecionarCompras(res, 'erro', 'Selecione os produtos e informe quantidades válidas.');
+            }
+
+            itensPorProduto.set(produtoId, (itensPorProduto.get(produtoId) || 0) + quantidade);
+        }
+
+        const idsProdutos = [...itensPorProduto.keys()];
+
+        const { data: produtosExistentes, error: erroProdutos } = await supabaseAdmin
+            .from('produtos')
+            .select('id')
+            .in('id', idsProdutos);
+
+        if (erroProdutos) throw erroProdutos;
+
+        if ((produtosExistentes || []).length !== idsProdutos.length) {
+            return redirecionarCompras(res, 'erro', 'Um dos produtos selecionados não existe mais.');
+        }
+
+        const { data: codigo, error } = await supabaseAdmin.rpc('criar_solicitacao_compra', {
+            p_solicitante_id: req.session.usuario.id,
+            p_solicitante_email: req.session.usuario.email,
+            p_motivo: motivo,
+            p_itens: idsProdutos.map(produtoId => ({
+                produto_id: produtoId,
+                quantidade: itensPorProduto.get(produtoId)
+            }))
+        });
+
+        if (error) throw error;
+
+        return redirecionarCompras(
+            res,
+            'mensagem',
+            `Solicitação nº ${String(codigo).padStart(5, '0')} criada com sucesso!`
+        );
+    } catch (erro) {
+        console.error('Erro ao criar solicitação de compra:', erro);
+        return redirecionarCompras(res, 'erro', 'Não foi possível criar a solicitação de compra.');
+    }
+});
+
+
+// Aprovar: Pendente → Comprada
+app.post('/compras/:codigo/aprovar', exigirPermissaoMovimentacao, async (req, res) => {
+    try {
+        const codigo = lerCodigoSolicitacao(req);
+
+        if (!codigo) {
+            return redirecionarCompras(res, 'erro', 'Código de solicitação inválido.');
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('solicitacoes_compra')
+            .update({
+                status: 'Comprada',
+                aprovador_email: req.session.usuario.email,
+                data_decisao: new Date().toISOString()
+            })
+            .eq('codigo', codigo)
+            .eq('status', 'Pendente')
+            .select('codigo')
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            return redirecionarCompras(res, 'erro', 'Solicitação não encontrada ou já decidida.');
+        }
+
+        return redirecionarCompras(res, 'mensagem', 'Solicitação aprovada. Status alterado para Comprada.');
+    } catch (erro) {
+        console.error('Erro ao aprovar solicitação de compra:', erro);
+        return redirecionarCompras(res, 'erro', 'Não foi possível aprovar a solicitação.');
+    }
+});
+
+
+// Rejeitar: Pendente → Rejeitada (exige motivo)
+app.post('/compras/:codigo/rejeitar', exigirPermissaoMovimentacao, async (req, res) => {
+    try {
+        const codigo = lerCodigoSolicitacao(req);
+        const motivo = String(req.body.motivo_rejeicao || '').trim();
+
+        if (!codigo || !motivo || motivo.length > 1000) {
+            return redirecionarCompras(res, 'erro', 'Informe o motivo da rejeição.');
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('solicitacoes_compra')
+            .update({
+                status: 'Rejeitada',
+                aprovador_email: req.session.usuario.email,
+                data_decisao: new Date().toISOString(),
+                motivo_rejeicao: motivo
+            })
+            .eq('codigo', codigo)
+            .eq('status', 'Pendente')
+            .select('codigo')
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            return redirecionarCompras(res, 'erro', 'Solicitação não encontrada ou já decidida.');
+        }
+
+        return redirecionarCompras(res, 'mensagem', 'Solicitação rejeitada.');
+    } catch (erro) {
+        console.error('Erro ao rejeitar solicitação de compra:', erro);
+        return redirecionarCompras(res, 'erro', 'Não foi possível rejeitar a solicitação.');
+    }
+});
+
+
+// Receber: Comprada → Recebida (dá entrada no estoque)
+app.post('/compras/:codigo/receber', exigirPermissaoMovimentacao, async (req, res) => {
+    try {
+        const codigo = lerCodigoSolicitacao(req);
+
+        if (!codigo) {
+            return redirecionarCompras(res, 'erro', 'Código de solicitação inválido.');
+        }
+
+        const { error } = await supabaseAdmin.rpc('receber_solicitacao_compra', {
+            p_codigo: codigo,
+            p_responsavel: req.session.usuario.email
+        });
+
+        if (error) {
+            console.error('Erro ao receber solicitação de compra:', error);
+            return redirecionarCompras(res, 'erro', 'Não foi possível registrar o recebimento. A solicitação precisa estar com status Comprada.');
+        }
+
+        return redirecionarCompras(res, 'mensagem', 'Recebimento registrado e estoque atualizado!');
+    } catch (erro) {
+        console.error('Erro ao receber solicitação de compra:', erro);
+        return redirecionarCompras(res, 'erro', 'Não foi possível registrar o recebimento.');
+    }
+});
+
+
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });

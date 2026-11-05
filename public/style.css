@@ -2016,6 +2016,200 @@ html[data-theme="light"] .filtros-relatorio input[type="date"],
 
 
 
+/* ===== SOLICITAÇÕES DE COMPRA ===== */
+
+.compra-itens {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.compra-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 160px 44px;
+    align-items: end;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-soft);
+}
+
+.dashboard-page .compra-remover-item {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 15px;
+}
+
+.dashboard-page .compra-remover-item:hover:not(:disabled) {
+    border-color: #fca5a5;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.dashboard-page .compra-remover-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.dashboard-page .compra-botao-secundario {
+    padding: 10px 14px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--green);
+    font-size: 13px;
+}
+
+.dashboard-page .compra-botao-secundario:hover {
+    background: var(--green-soft);
+}
+
+.compra-acoes-form {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.compra-acoes-form .primary-link {
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.compra-filtros .campo-produto input,
+.compra-filtros .campo-produto select {
+    width: 100%;
+    min-height: 42px;
+    margin: 0;
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.dashboard-page .compra-filtros .campo-produto {
+    flex: 0 1 150px;
+}
+
+.dashboard-page .compra-filtros .compra-filtro-usuario {
+    flex: 1 1 220px;
+}
+
+.compra-tabela td {
+    vertical-align: top;
+}
+
+.compra-codigo {
+    font-family: Consolas, "Courier New", monospace;
+    color: var(--green);
+}
+
+.compra-nowrap {
+    white-space: nowrap;
+}
+
+.compra-lista-produtos {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 170px;
+}
+
+.compra-lista-produtos li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+}
+
+.compra-motivo {
+    min-width: 180px;
+    max-width: 280px;
+    white-space: normal;
+}
+
+.compra-pessoa {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 150px;
+}
+
+.compra-pessoa span,
+.compra-pessoa small,
+.compra-vazio {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.compra-pessoa strong {
+    font-size: 13px;
+    word-break: break-all;
+}
+
+.dashboard-page .compra-motivo-rejeicao {
+    margin-top: 4px;
+    color: #b91c1c;
+}
+
+.compra-status {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.compra-status-pendente  { background: #fef3c7; color: #92400e; }
+.compra-status-comprada  { background: #dbeafe; color: #1e40af; }
+.compra-status-recebida  { background: #dcfce7; color: #166534; }
+.compra-status-rejeitada { background: #fee2e2; color: #991b1b; }
+
+.acoes-requisicao .compra-botao-rejeitar {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.acoes-requisicao .compra-botao-rejeitar:hover {
+    background: #fecaca;
+}
+
+.acoes-requisicao .compra-botao-receber {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.acoes-requisicao .compra-botao-receber:hover {
+    background: #bfdbfe;
+}
+
+@media (max-width: 600px) {
+    .compra-item {
+        grid-template-columns: minmax(0, 1fr) 44px;
+    }
+
+    .compra-item .campo-formulario:first-child {
+        grid-column: 1 / -1;
+    }
+
+    .compra-acoes-form {
+        flex-direction: column-reverse;
+    }
+
+    .dashboard-page .compra-filtros .campo-produto {
+        flex: 1 1 100%;
+    }
+}
+
+
+
+
 /* ===== TELAS DE ACESSO (login / recuperar / redefinir senha) ===== */
 
 .auth-layout {
