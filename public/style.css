@@ -2015,3 +2015,232 @@ html[data-theme="light"] .filtros-relatorio input[type="date"],
 
 
 
+
+/* ===== TELAS DE ACESSO (login / recuperar / redefinir senha) ===== */
+
+.auth-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Painel verde da marca, no mesmo tom da sidebar */
+.auth-marca {
+    width: 42%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    padding: 36px 40px 24px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+}
+
+.auth-brand {
+    padding: 0;
+}
+
+.auth-marca-texto {
+    margin: auto 0;
+    padding: 40px 0;
+}
+
+.dashboard-page .auth-marca-label {
+    margin: 0 0 12px;
+    color: #86efac;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1.4px;
+}
+
+.dashboard-page .auth-marca h2 {
+    margin: 0 0 14px;
+    color: #ffffff;
+    font-size: 28px;
+    line-height: 1.3;
+}
+
+.dashboard-page .auth-marca-texto p:not(.auth-marca-label) {
+    margin: 0;
+    color: var(--sidebar-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.auth-recursos {
+    margin: 0 0 24px;
+    padding: 0;
+    list-style: none;
+}
+
+.auth-recursos li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    font-size: 13px;
+}
+
+.auth-recursos span {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #86efac;
+}
+
+.auth-rodape {
+    padding: 16px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Área do formulário */
+.auth-conteudo {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 34px 32px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.dashboard-page .auth-card-label {
+    margin: 0 0 9px;
+    color: var(--green);
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1.4px;
+}
+
+.dashboard-page .auth-card h1 {
+    margin: 0 0 8px;
+    color: var(--text);
+    font-size: 26px;
+}
+
+.dashboard-page .auth-subtitulo {
+    margin: 0 0 24px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin: 0;
+}
+
+.auth-page .auth-form input {
+    margin: 0;
+    border-color: var(--border);
+    background: var(--surface-soft);
+    color: var(--text);
+}
+
+.auth-page .auth-form input:focus {
+    background: var(--surface);
+}
+
+.auth-page .auth-form label {
+    margin: 0;
+    color: var(--text);
+}
+
+.auth-label-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.dashboard-page .auth-link {
+    color: var(--green);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.dashboard-page .auth-link:hover {
+    text-decoration: underline;
+}
+
+.auth-botao {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 4px;
+    border-radius: 8px;
+    background: #15803d;
+    font-size: 14px;
+}
+
+.auth-botao:hover {
+    background: #166534;
+}
+
+.dashboard-page .auth-voltar {
+    margin: 22px 0 0;
+    text-align: center;
+}
+
+.auth-tema {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+}
+
+.auth-page .mensagem-erro,
+.auth-page .mensagem-sucesso {
+    font-size: 13px;
+}
+
+.auth-page .mensagem-erro[hidden] {
+    display: none;
+}
+
+/* Celular: painel da marca vira um cabeçalho compacto */
+@media (max-width: 860px) {
+    .auth-layout {
+        flex-direction: column;
+    }
+
+    .auth-marca {
+        width: 100%;
+        max-width: none;
+        padding: 20px 16px;
+    }
+
+    .auth-marca-texto,
+    .auth-recursos,
+    .auth-rodape {
+        display: none;
+    }
+
+    .auth-conteudo {
+        align-items: flex-start;
+        padding: 24px 16px;
+    }
+
+    .auth-card {
+        padding: 26px 20px;
+    }
+
+    .auth-tema {
+        top: 22px;
+        right: 16px;
+    }
+
+    .auth-tema #temaTexto {
+        display: none;
+    }
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova senha | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+    <script>
+        try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}
+    </script>
+</head>
+<body class="dashboard-page auth-page">
+    <div class="auth-layout">
+        <%- include('partials/auth-marca') %>
+
+        <main class="auth-conteudo">
+            <div class="auth-card">
+                <p class="auth-card-label">RECUPERAR ACESSO</p>
+                <h1>Criar nova senha</h1>
+                <p class="auth-subtitulo">Digite a nova senha da sua conta.</p>
+
+                <div class="mensagem-erro" id="erro-link" <%= erro ? '' : 'hidden' %>><%= erro %></div>
+
+                <form action="/redefinir-senha" method="POST" class="auth-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="token" id="token" value="<%= token %>">
+
+                    <div class="campo-produto">
+                        <label for="senha">Nova senha</label>
+                        <input
+                            type="password"
+                            id="senha"
+                            name="senha"
+                            placeholder="Mínimo de 6 caracteres"
+                            autocomplete="new-password"
+                            minlength="6"
+                            required
+                        >
+                    </div>
+
+                    <div class="campo-produto">
+                        <label for="confirmacao">Confirmar nova senha</label>
+                        <input
+                            type="password"
+                            id="confirmacao"
+                            name="confirmacao"
+                            placeholder="Repita a nova senha"
+                            autocomplete="new-password"
+                            minlength="6"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="auth-botao">
+                        Salvar nova senha
+                    </button>
+                </form>
+
+                <p class="auth-voltar"><a href="/recuperar-senha" class="auth-link">Solicitar um novo link</a></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // O Supabase devolve o token no fragmento da URL (#access_token=...),
+        // que o servidor não enxerga. Copiamos para o formulário e limpamos a URL.
+        (function () {
+            var params = new URLSearchParams(window.location.hash.slice(1));
+            var campoToken = document.getElementById('token');
+            var caixaErro = document.getElementById('erro-link');
+
+            if (params.get('access_token')) {
+                campoToken.value = params.get('access_token');
+                history.replaceState(null, '', window.location.pathname);
+            } else if (params.get('error')) {
+                caixaErro.textContent = 'O link de recuperação é inválido ou expirou. Solicite um novo.';
+                caixaErro.hidden = false;
+            }
+
+            if (!campoToken.value && caixaErro.hidden) {
+                caixaErro.textContent = 'Abra esta página pelo link enviado ao seu e-mail.';
+                caixaErro.hidden = false;
+            }
+        })();
+    </script>
+    <script src="/script.js"></script>
+</body>
+</html>

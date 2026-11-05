@@ -350,7 +350,11 @@ app.get('/admin/permissoes', exigirAdministrador, async (req, res) => {
 
 // Proteger as páginas e operações do sistema
 app.use((req, res, next) => {
-    const rotasPublicas = ['/login'];
+    const rotasPublicas = [
+        '/login',
+        '/recuperar-senha',
+        '/redefinir-senha'
+    ];
 
     if (rotasPublicas.includes(req.path)) {
         return next();
@@ -372,7 +376,105 @@ app.get('/login', (req, res) => {
         return res.redirect('/');
     }
 
-    res.render('login', { erro: '' });
+    const mensagem = req.query.mensagem === 'senhaRedefinida'
+        ? 'Senha redefinida com sucesso. Entre com a nova senha.'
+        : '';
+
+    res.render('login', { erro: '', mensagem });
+});
+
+// Página "Esqueci minha senha"
+app.get('/recuperar-senha', (req, res) => {
+    res.render('recuperar-senha', { erro: '', mensagem: '' });
+});
+
+// Envia o e-mail de recuperação pelo Supabase
+app.post('/recuperar-senha', async (req, res) => {
+    const email = String(req.body.email || '').trim();
+
+    if (!email) {
+        return res.status(400).render('recuperar-senha', {
+            erro: 'Informe o e-mail.',
+            mensagem: ''
+        });
+    }
+
+    const urlBase = process.env.APP_URL || `http://localhost:${PORT}`;
+
+    const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, {
+        redirectTo: `${urlBase}/redefinir-senha`
+    });
+
+    if (error) {
+        console.error('Erro ao enviar e-mail de recuperação:', error.message);
+
+        if (error.status === 429) {
+            return res.status(429).render('recuperar-senha', {
+                erro: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+                mensagem: ''
+            });
+        }
+    }
+
+    // Mensagem genérica para não revelar quais e-mails estão cadastrados
+    return res.render('recuperar-senha', {
+        erro: '',
+        mensagem: 'Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha.'
+    });
+});
+
+// Página para definir a nova senha (aberta pelo link do e-mail)
+app.get('/redefinir-senha', (req, res) => {
+    res.render('redefinir-senha', { erro: '', token: '' });
+});
+
+// Salva a nova senha
+app.post('/redefinir-senha', async (req, res) => {
+    const token = String(req.body.token || '');
+    const senha = String(req.body.senha || '');
+    const confirmacao = String(req.body.confirmacao || '');
+
+    const renderErro = (erro, status = 400) =>
+        res.status(status).render('redefinir-senha', { erro, token });
+
+    if (!token) {
+        return renderErro('Link de recuperação inválido. Solicite um novo.');
+    }
+
+    if (senha.length < 6) {
+        return renderErro('A senha precisa ter pelo menos 6 caracteres.');
+    }
+
+    if (senha !== confirmacao) {
+        return renderErro('As senhas não conferem.');
+    }
+
+    try {
+        // Valida o token do link e descobre de qual usuário ele é
+        const { data, error } = await supabaseAdmin.auth.getUser(token);
+
+        if (error || !data?.user) {
+            return renderErro(
+                'O link de recuperação é inválido ou expirou. Solicite um novo.',
+                401
+            );
+        }
+
+        const { error: erroAtualizacao } =
+            await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
+                password: senha
+            });
+
+        if (erroAtualizacao) {
+            console.error('Erro ao redefinir senha:', erroAtualizacao.message);
+            return renderErro('Não foi possível salvar a nova senha.', 500);
+        }
+
+        return res.redirect('/login?mensagem=senhaRedefinida');
+    } catch (erro) {
+        console.error('Erro ao redefinir senha:', erro);
+        return renderErro('Ocorreu um erro ao redefinir a senha.', 500);
+    }
 });
 
 // Processar login

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar senha | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+    <script>
+        try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}
+    </script>
+</head>
+<body class="dashboard-page auth-page">
+    <div class="auth-layout">
+        <%- include('partials/auth-marca') %>
+
+        <main class="auth-conteudo">
+            <div class="auth-card">
+                <p class="auth-card-label">RECUPERAR ACESSO</p>
+                <h1>Esqueceu a senha?</h1>
+                <p class="auth-subtitulo">Informe seu e-mail e enviaremos um link para criar uma nova senha.</p>
+
+                <% if (erro) { %>
+                    <div class="mensagem-erro"><%= erro %></div>
+                <% } %>
+
+                <% if (mensagem) { %>
+                    <div class="mensagem-sucesso"><%= mensagem %></div>
+                <% } %>
+
+                <form action="/recuperar-senha" method="POST" class="auth-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                    <div class="campo-produto">
+                        <label for="email">E-mail</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="seu@email.com"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="auth-botao">
+                        Enviar link
+                    </button>
+                </form>
+
+                <p class="auth-voltar"><a href="/login" class="auth-link">← Voltar para o login</a></p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

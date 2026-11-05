@@ -1,51 +1,70 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Controle de Estoque</title>
+    <title>Login | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <script>
+        try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}
+    </script>
 </head>
-<body class="pagina-login">
-    <main class="login-container">
-        <section class="login-card">
-            <h1>Controle de Estoque</h1>
-            <p>Entre com sua conta para continuar.</p>
+<body class="dashboard-page auth-page">
+    <div class="auth-layout">
+        <%- include('partials/auth-marca') %>
 
-            <% if (erro) { %>
-                <div class="mensagem-erro"><%= erro %></div>
-            <% } %>
+        <main class="auth-conteudo">
+            <div class="auth-card">
+                <p class="auth-card-label">BEM-VINDO DE VOLTA</p>
+                <h1>Entrar</h1>
+                <p class="auth-subtitulo">Entre com sua conta para continuar.</p>
 
-            <form action="/login" method="POST">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <div class="form-group">
-                    <label for="email">E-mail</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        autocomplete="username"
-                        required
-                    >
-                </div>
+                <% if (erro) { %>
+                    <div class="mensagem-erro"><%= erro %></div>
+                <% } %>
 
-                <div class="form-group">
-                    <label for="senha">Senha</label>
-                    <input
-                        type="password"
-                        id="senha"
-                        name="senha"
-                        autocomplete="current-password"
-                        required
-                    >
-                </div>
+                <% if (locals.mensagem) { %>
+                    <div class="mensagem-sucesso"><%= mensagem %></div>
+                <% } %>
 
-                <button type="submit" class="btn-primary">
-                    Entrar
-                </button>
-            </form>
-        </section>
-    </main>
+                <form action="/login" method="POST" class="auth-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                    <div class="campo-produto">
+                        <label for="email">E-mail</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="seu@email.com"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
+
+                    <div class="campo-produto">
+                        <div class="auth-label-linha">
+                            <label for="senha">Senha</label>
+                            <a href="/recuperar-senha" class="auth-link">Esqueci minha senha</a>
+                        </div>
+                        <input
+                            type="password"
+                            id="senha"
+                            name="senha"
+                            placeholder="••••••"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="auth-botao">
+                        Entrar
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
 </body>
 </html>
