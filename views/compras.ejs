@@ -38,9 +38,18 @@
                     <p>Peça a compra de produtos e acompanhe cada solicitação até o recebimento.</p>
                 </div>
 
-                <button type="button" class="primary-link" id="botaoNovaSolicitacao" aria-expanded="false" aria-controls="cardNovaSolicitacao">
-                    ＋ Nova solicitação
-                </button>
+                <!-- Cada ação abre em uma nova aba -->
+                <div class="compra-acoes-topo">
+                    <a href="/compras/nova" target="_blank" rel="noopener" class="primary-link">
+                        ＋ Nova solicitação
+                    </a>
+                    <a href="/compras/editar" target="_blank" rel="noopener" class="compra-botao-topo">
+                        ✎ Editar
+                    </a>
+                    <a href="/compras/excluir" target="_blank" rel="noopener" class="compra-botao-topo compra-botao-topo-perigo">
+                        🗑 Excluir
+                    </a>
+                </div>
             </section>
 
             <% if (mensagem) { %>
@@ -50,77 +59,6 @@
             <% if (erro) { %>
                 <div class="mensagem-erro" id="mensagemErro" role="alert"><%= erro %></div>
             <% } %>
-
-            <!-- Formulário de nova solicitação (abre pelo botão acima) -->
-            <section class="panel-card requisicoes-card" id="cardNovaSolicitacao" hidden>
-                <div class="panel-header">
-                    <div>
-                        <h2>Nova solicitação de compra</h2>
-                        <p>Adicione os produtos, as quantidades e explique o motivo da compra.</p>
-                    </div>
-                </div>
-
-                <% if (produtos.length === 0) { %>
-                    <div class="empty-state">
-                        <span>!</span>
-                        <p>Cadastre um produto antes de criar uma solicitação de compra.</p>
-                    </div>
-                <% } else { %>
-                    <form action="/compras" method="POST" class="formulario-requisicao">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-                        <div class="compra-itens" id="listaItens">
-                            <div class="compra-item">
-                                <div class="campo-formulario">
-                                    <label>Produto</label>
-                                    <select name="produto_id" required>
-                                        <option value="">Selecione um produto</option>
-                                        <% produtos.forEach(produto => { %>
-                                            <option value="<%= produto.id %>">
-                                                <%= produto.nome %> — Estoque: <%= produto.quantidade %>
-                                            </option>
-                                        <% }) %>
-                                    </select>
-                                </div>
-
-                                <div class="campo-formulario compra-item-quantidade">
-                                    <label>Quantidade</label>
-                                    <input type="number" name="quantidade" min="1" step="1" required>
-                                </div>
-
-                                <button type="button" class="compra-remover-item" aria-label="Remover produto" title="Remover produto">✕</button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <button type="button" class="compra-botao-secundario" id="botaoAdicionarItem">
-                                ＋ Adicionar outro produto
-                            </button>
-                        </div>
-
-                        <div class="campo-formulario">
-                            <label for="motivo">Motivo da solicitação</label>
-                            <textarea
-                                name="motivo"
-                                id="motivo"
-                                rows="3"
-                                maxlength="1000"
-                                placeholder="Ex.: estoque abaixo do mínimo, demanda do setor X..."
-                                required
-                            ></textarea>
-                        </div>
-
-                        <div class="acoes-formulario compra-acoes-form">
-                            <button type="button" class="compra-botao-secundario" id="botaoCancelarSolicitacao">
-                                Cancelar
-                            </button>
-                            <button type="submit" class="primary-link">
-                                Enviar solicitação
-                            </button>
-                        </div>
-                    </form>
-                <% } %>
-            </section>
 
             <!-- Histórico -->
             <section class="panel-card requisicoes-card">
@@ -320,59 +258,26 @@
 
     <script>
         (function () {
-            var card = document.getElementById('cardNovaSolicitacao');
-            var botaoNova = document.getElementById('botaoNovaSolicitacao');
-            var botaoCancelar = document.getElementById('botaoCancelarSolicitacao');
-            var lista = document.getElementById('listaItens');
-            var botaoAdicionar = document.getElementById('botaoAdicionarItem');
+            // As ações abrem em outra aba. Quando uma delas conclui (e cai
+            // aqui com mensagem), avisa as outras abas da lista para atualizar.
+            var canal = 'BroadcastChannel' in window ? new BroadcastChannel('estoquepro-compras') : null;
 
-            function mostrarFormulario(mostrar) {
-                card.hidden = !mostrar;
-                botaoNova.setAttribute('aria-expanded', String(mostrar));
-                if (mostrar) {
-                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    var primeiroCampo = card.querySelector('select, textarea');
-                    if (primeiroCampo) primeiroCampo.focus({ preventScroll: true });
+            if (canal) {
+                canal.onmessage = function (evento) {
+                    if (evento.data === 'atualizar') window.location.reload();
+                };
+
+                if (document.getElementById('mensagemSucesso')) {
+                    canal.postMessage('atualizar');
                 }
             }
 
-            botaoNova.addEventListener('click', function () {
-                mostrarFormulario(card.hidden);
-            });
-
-            if (botaoCancelar) {
-                botaoCancelar.addEventListener('click', function () {
-                    mostrarFormulario(false);
-                });
-            }
-
-            // Só deixa remover quando houver mais de um produto
-            function atualizarBotoesRemover() {
-                var itens = lista ? lista.querySelectorAll('.compra-item') : [];
-                itens.forEach(function (item) {
-                    item.querySelector('.compra-remover-item').disabled = itens.length === 1;
-                });
-            }
-
-            if (lista && botaoAdicionar) {
-                botaoAdicionar.addEventListener('click', function () {
-                    var novo = lista.querySelector('.compra-item').cloneNode(true);
-                    novo.querySelector('select').value = '';
-                    novo.querySelector('input').value = '';
-                    lista.appendChild(novo);
-                    atualizarBotoesRemover();
-                    novo.querySelector('select').focus();
-                });
-
-                lista.addEventListener('click', function (evento) {
-                    var botao = evento.target.closest('.compra-remover-item');
-                    if (botao && lista.querySelectorAll('.compra-item').length > 1) {
-                        botao.closest('.compra-item').remove();
-                        atualizarBotoesRemover();
-                    }
-                });
-
-                atualizarBotoesRemover();
+            // Tira a mensagem da URL para não reaparecer (nem reavisar) ao recarregar
+            var url = new URL(window.location.href);
+            if (url.searchParams.has('mensagem') || url.searchParams.has('erro')) {
+                url.searchParams.delete('mensagem');
+                url.searchParams.delete('erro');
+                history.replaceState(null, '', url.pathname + url.search);
             }
 
             // Esconde as mensagens depois de alguns segundos

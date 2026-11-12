@@ -1,0 +1,41 @@
+<%
+    // Parâmetros: acao ('editar' | 'excluir'), gerenciaveis (lista), rotulo (texto do botão)
+    const dataEscolha = (valor) => new Date(valor).toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        dateStyle: 'short',
+        timeStyle: 'short'
+    });
+%>
+
+<section class="panel-card requisicoes-card">
+    <div class="panel-header">
+        <div>
+            <h2>Escolha a solicitação</h2>
+            <p>Somente solicitações pendentes podem ser alteradas.</p>
+        </div>
+        <span class="codigo-produto">Pendentes: <%= gerenciaveis.length %></span>
+    </div>
+
+    <% if (gerenciaveis.length === 0) { %>
+        <div class="empty-state">
+            <span>✓</span>
+            <p>Nenhuma solicitação pendente disponível para você.</p>
+        </div>
+    <% } else { %>
+        <ul class="compra-escolha">
+            <% gerenciaveis.forEach(item => { %>
+                <li>
+                    <div class="compra-escolha-info">
+                        <strong class="compra-codigo">#<%= String(item.codigo).padStart(5, '0') %></strong>
+                        <span class="compra-escolha-motivo"><%= item.motivo %></span>
+                        <small><%= item.solicitante_email %> · <%= dataEscolha(item.data_solicitacao) %></small>
+                    </div>
+                    <a
+                        href="/compras/<%= acao %>?codigo=<%= item.codigo %>"
+                        class="compra-botao-topo <%= acao === 'excluir' ? 'compra-botao-topo-perigo' : '' %>"
+                    ><%= rotulo %></a>
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
+</section>

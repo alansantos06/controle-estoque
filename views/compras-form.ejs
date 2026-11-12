@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= modo === 'nova' ? 'Nova solicitação' : 'Editar solicitação' %> | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dashboard-page">
+    <%
+        const editando = modo === 'editar';
+        const codigoFormatado = solicitacao ? '#' + String(solicitacao.codigo).padStart(5, '0') : '';
+
+        // Linhas do formulário: os itens da solicitação, ou uma linha vazia
+        const linhas = solicitacao && solicitacao.solicitacoes_compra_itens.length
+            ? solicitacao.solicitacoes_compra_itens.map(item => ({
+                produtoId: item.produto_id,
+                quantidade: item.quantidade
+            }))
+            : [{ produtoId: '', quantidade: '' }];
+    %>
+
+    <div class="app-layout">
+
+        <%- include('partials/sidebar', { paginaAtiva: 'compras' }) %>
+
+        <main class="dashboard-main">
+
+            <%- include('partials/header', {
+                paginaAtiva: 'compras',
+                tituloPagina: editando ? 'Editar solicitação' : 'Nova solicitação'
+            }) %>
+
+            <section class="welcome-panel">
+                <div>
+                    <p class="welcome-label">SOLICITAÇÕES DE COMPRA</p>
+                    <h2>
+                        <% if (!editando) { %>
+                            Nova solicitação de compra
+                        <% } else if (solicitacao) { %>
+                            Editar solicitação <span class="compra-codigo"><%= codigoFormatado %></span>
+                        <% } else { %>
+                            Editar solicitação de compra
+                        <% } %>
+                    </h2>
+                    <p>
+                        <% if (!editando) { %>
+                            Adicione os produtos, as quantidades e explique o motivo da compra.
+                        <% } else if (solicitacao) { %>
+                            Solicitada por <strong><%= solicitacao.solicitante_email %></strong>. Altere os produtos, as quantidades ou o motivo.
+                        <% } else { %>
+                            Selecione abaixo a solicitação que deseja editar.
+                        <% } %>
+                    </p>
+                </div>
+
+                <div class="compra-acoes-topo">
+                    <% if (editando && solicitacao) { %>
+                        <a href="/compras/editar" class="compra-botao-topo">← Outra solicitação</a>
+                    <% } %>
+                    <button type="button" class="compra-botao-topo" data-fechar-aba>Fechar aba</button>
+                </div>
+            </section>
+
+            <% if (erro) { %>
+                <div class="mensagem-erro" role="alert"><%= erro %></div>
+            <% } %>
+
+            <% if (editando && !solicitacao) { %>
+
+                <%- include('partials/compras-escolha', { acao: 'editar', gerenciaveis, rotulo: '✎ Editar' }) %>
+
+            <% } else { %>
+
+                <section class="panel-card requisicoes-card">
+                    <% if (produtos.length === 0) { %>
+                        <div class="empty-state">
+                            <span>!</span>
+                            <p>Cadastre um produto antes de criar uma solicitação de compra.</p>
+                        </div>
+                    <% } else { %>
+                        <form
+                            action="<%= editando ? '/compras/' + solicitacao.codigo + '/editar' : '/compras' %>"
+                            method="POST"
+                            class="formulario-requisicao"
+                        >
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                            <div class="compra-itens" id="listaItens">
+                                <% linhas.forEach(linha => { %>
+                                    <div class="compra-item">
+                                        <div class="campo-formulario">
+                                            <label>Produto</label>
+                                            <select name="produto_id" required>
+                                                <option value="">Selecione um produto</option>
+                                                <% produtos.forEach(produto => { %>
+                                                    <option value="<%= produto.id %>" <%= Number(linha.produtoId) === produto.id ? 'selected' : '' %>>
+                                                        <%= produto.nome %> — Estoque: <%= produto.quantidade %>
+                                                    </option>
+                                                <% }) %>
+                                            </select>
+                                        </div>
+
+                                        <div class="campo-formulario compra-item-quantidade">
+                                            <label>Quantidade</label>
+                                            <input type="number" name="quantidade" min="1" step="1" value="<%= linha.quantidade %>" required>
+                                        </div>
+
+                                        <button type="button" class="compra-remover-item" aria-label="Remover produto" title="Remover produto">✕</button>
+                                    </div>
+                                <% }) %>
+                            </div>
+
+                            <div>
+                                <button type="button" class="compra-botao-secundario" id="botaoAdicionarItem">
+                                    ＋ Adicionar outro produto
+                                </button>
+                            </div>
+
+                            <div class="campo-formulario">
+                                <label for="motivo">Motivo da solicitação</label>
+                                <textarea
+                                    name="motivo"
+                                    id="motivo"
+                                    rows="3"
+                                    maxlength="1000"
+                                    placeholder="Ex.: estoque abaixo do mínimo, demanda do setor X..."
+                                    required
+                                ><%= solicitacao ? solicitacao.motivo : '' %></textarea>
+                            </div>
+
+                            <div class="acoes-formulario compra-acoes-form">
+                                <button type="button" class="compra-botao-secundario" data-fechar-aba>
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="primary-link">
+                                    <%= editando ? 'Salvar alterações' : 'Enviar solicitação' %>
+                                </button>
+                            </div>
+                        </form>
+                    <% } %>
+                </section>
+
+            <% } %>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+    <script src="/compras-acao.js"></script>
+</body>
+</html>

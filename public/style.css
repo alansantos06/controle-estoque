@@ -2438,3 +2438,156 @@ html[data-theme="light"] .filtros-relatorio input[type="date"],
         display: none;
     }
 }
+
+
+
+
+/* ===== SOLICITAÇÕES DE COMPRA: botões do topo e páginas de ação ===== */
+
+.compra-acoes-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.dashboard-page .compra-botao-topo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.dashboard-page .compra-botao-topo:hover {
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.dashboard-page .compra-botao-topo-perigo {
+    color: #b91c1c;
+}
+
+.dashboard-page .compra-botao-topo-perigo:hover {
+    border-color: #fca5a5;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+:root[data-theme="dark"] .dashboard-page .compra-botao-topo-perigo {
+    color: #fca5a5;
+}
+
+:root[data-theme="dark"] .dashboard-page .compra-botao-topo-perigo:hover {
+    border-color: #7f1d1d;
+    background: #3b1d1d;
+    color: #fecaca;
+}
+
+.dashboard-page .compra-botao-excluir {
+    padding: 12px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.dashboard-page .compra-botao-excluir:hover {
+    background: #b91c1c;
+}
+
+/* Lista para escolher a solicitação a editar/excluir */
+.compra-escolha {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.compra-escolha li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-soft);
+}
+
+.compra-escolha-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.compra-escolha-motivo {
+    overflow: hidden;
+    color: var(--text);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compra-escolha-info small {
+    color: var(--muted);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+/* Resumo da solicitação na tela de exclusão */
+.compra-resumo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 0 0 20px;
+}
+
+.compra-resumo dt {
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.compra-resumo dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    word-break: break-word;
+}
+
+@media (max-width: 760px) {
+    .compra-acoes-topo {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .compra-escolha li {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .compra-escolha-motivo {
+        white-space: normal;
+    }
+
+    .compra-resumo {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1458,12 +1458,126 @@ function redirecionarCompras(res, tipo, texto) {
 }
 
 function lerCodigoSolicitacao(req) {
-    const codigo = Number(req.params.codigo);
+    const codigo = Number(req.params.codigo ?? req.query.codigo);
     return Number.isSafeInteger(codigo) && codigo > 0 ? codigo : null;
 }
 
+function formatarCodigoCompra(codigo) {
+    return String(codigo).padStart(5, '0');
+}
 
-// Tela de solicitações de compra (formulário + histórico com filtros)
+// Redireciona para uma das páginas de ação (nova, editar, excluir) com erro
+function redirecionarAcaoCompra(res, acao, texto, codigo) {
+    const parametros = new URLSearchParams({ erro: texto });
+    if (codigo) parametros.set('codigo', codigo);
+    return res.redirect(`/compras/${acao}?${parametros}`);
+}
+
+// Só o próprio solicitante ou quem pode aprovar mexe numa solicitação
+function podeGerenciarSolicitacao(req, solicitacao, podeAprovar) {
+    return podeAprovar || solicitacao.solicitante_id === req.session.usuario.id;
+}
+
+async function buscarSolicitacaoCompra(codigo) {
+    const { data, error } = await supabaseAdmin
+        .from('solicitacoes_compra')
+        .select(`
+            *,
+            solicitacoes_compra_itens (
+                id,
+                produto_id,
+                quantidade,
+                produtos ( id, nome )
+            )
+        `)
+        .eq('codigo', codigo)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data;
+}
+
+// Solicitações pendentes que o usuário pode editar ou excluir
+async function listarSolicitacoesGerenciaveis(req, podeAprovar) {
+    let consulta = supabaseAdmin
+        .from('solicitacoes_compra')
+        .select('codigo, motivo, solicitante_email, data_solicitacao')
+        .eq('status', 'Pendente')
+        .order('codigo', { ascending: false });
+
+    if (!podeAprovar) {
+        consulta = consulta.eq('solicitante_id', req.session.usuario.id);
+    }
+
+    const { data, error } = await consulta;
+    if (error) throw error;
+    return data || [];
+}
+
+async function listarProdutosCompra() {
+    const { data, error } = await supabaseAdmin
+        .from('produtos')
+        .select('id, nome, quantidade')
+        .order('nome', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+}
+
+// Lê e valida motivo + itens do formulário. Junta produtos repetidos.
+async function lerFormularioSolicitacao(req) {
+    const motivo = String(req.body.motivo || '').trim();
+    const produtosIds = [].concat(req.body.produto_id || []);
+    const quantidades = [].concat(req.body.quantidade || []);
+
+    if (!motivo || motivo.length > 1000) {
+        return { erro: 'Informe o motivo da solicitação (até 1000 caracteres).' };
+    }
+
+    if (produtosIds.length === 0 || produtosIds.length !== quantidades.length || produtosIds.length > 50) {
+        return { erro: 'Adicione de 1 a 50 produtos à solicitação.' };
+    }
+
+    const itensPorProduto = new Map();
+
+    for (let i = 0; i < produtosIds.length; i++) {
+        const produtoId = Number(produtosIds[i]);
+        const quantidade = Number(quantidades[i]);
+
+        if (
+            !Number.isSafeInteger(produtoId) || produtoId <= 0 ||
+            !Number.isSafeInteger(quantidade) || quantidade <= 0 || quantidade > 1000000
+        ) {
+            return { erro: 'Selecione os produtos e informe quantidades válidas.' };
+        }
+
+        itensPorProduto.set(produtoId, (itensPorProduto.get(produtoId) || 0) + quantidade);
+    }
+
+    const idsProdutos = [...itensPorProduto.keys()];
+
+    const { data: produtosExistentes, error } = await supabaseAdmin
+        .from('produtos')
+        .select('id')
+        .in('id', idsProdutos);
+
+    if (error) throw error;
+
+    if ((produtosExistentes || []).length !== idsProdutos.length) {
+        return { erro: 'Um dos produtos selecionados não existe mais.' };
+    }
+
+    return {
+        motivo,
+        itens: idsProdutos.map(produtoId => ({
+            produto_id: produtoId,
+            quantidade: itensPorProduto.get(produtoId)
+        }))
+    };
+}
+
+
+// Tela de solicitações de compra (histórico com filtros)
 app.get('/compras', async (req, res) => {
     try {
         const filtros = {
@@ -1513,21 +1627,15 @@ app.get('/compras', async (req, res) => {
 
         const [
             { data: solicitacoes, error: erroSolicitacoes },
-            { data: produtos, error: erroProdutos },
             { data: listaUsuarios, error: erroUsuarios },
             podeAprovar
         ] = await Promise.all([
             consulta,
-            supabaseAdmin
-                .from('produtos')
-                .select('id, nome, quantidade')
-                .order('nome', { ascending: true }),
             supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
             usuarioTemPermissaoMovimentacao(req)
         ]);
 
         if (erroSolicitacoes) throw erroSolicitacoes;
-        if (erroProdutos) throw erroProdutos;
         if (erroUsuarios) throw erroUsuarios;
 
         const usuarios = (listaUsuarios?.users || [])
@@ -1537,7 +1645,6 @@ app.get('/compras', async (req, res) => {
 
         return res.render('compras', {
             solicitacoes: solicitacoes || [],
-            produtos: produtos || [],
             usuarios,
             statusDisponiveis: STATUS_COMPRA,
             filtros,
@@ -1555,59 +1662,37 @@ app.get('/compras', async (req, res) => {
 });
 
 
+// Página: nova solicitação (abre em outra aba)
+app.get('/compras/nova', async (req, res) => {
+    try {
+        return res.render('compras-form', {
+            modo: 'nova',
+            produtos: await listarProdutosCompra(),
+            solicitacao: null,
+            gerenciaveis: [],
+            erro: req.query.erro || ''
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir nova solicitação de compra:', erro);
+        return redirecionarCompras(res, 'erro', 'Não foi possível abrir o formulário de solicitação.');
+    }
+});
+
+
 // Criar uma nova solicitação de compra
 app.post('/compras', async (req, res) => {
     try {
-        const motivo = String(req.body.motivo || '').trim();
-        const produtosIds = [].concat(req.body.produto_id || []);
-        const quantidades = [].concat(req.body.quantidade || []);
+        const formulario = await lerFormularioSolicitacao(req);
 
-        if (!motivo || motivo.length > 1000) {
-            return redirecionarCompras(res, 'erro', 'Informe o motivo da solicitação (até 1000 caracteres).');
-        }
-
-        if (produtosIds.length === 0 || produtosIds.length !== quantidades.length || produtosIds.length > 50) {
-            return redirecionarCompras(res, 'erro', 'Adicione de 1 a 50 produtos à solicitação.');
-        }
-
-        // Junta linhas repetidas do mesmo produto somando as quantidades
-        const itensPorProduto = new Map();
-
-        for (let i = 0; i < produtosIds.length; i++) {
-            const produtoId = Number(produtosIds[i]);
-            const quantidade = Number(quantidades[i]);
-
-            if (
-                !Number.isSafeInteger(produtoId) || produtoId <= 0 ||
-                !Number.isSafeInteger(quantidade) || quantidade <= 0 || quantidade > 1000000
-            ) {
-                return redirecionarCompras(res, 'erro', 'Selecione os produtos e informe quantidades válidas.');
-            }
-
-            itensPorProduto.set(produtoId, (itensPorProduto.get(produtoId) || 0) + quantidade);
-        }
-
-        const idsProdutos = [...itensPorProduto.keys()];
-
-        const { data: produtosExistentes, error: erroProdutos } = await supabaseAdmin
-            .from('produtos')
-            .select('id')
-            .in('id', idsProdutos);
-
-        if (erroProdutos) throw erroProdutos;
-
-        if ((produtosExistentes || []).length !== idsProdutos.length) {
-            return redirecionarCompras(res, 'erro', 'Um dos produtos selecionados não existe mais.');
+        if (formulario.erro) {
+            return redirecionarAcaoCompra(res, 'nova', formulario.erro);
         }
 
         const { data: codigo, error } = await supabaseAdmin.rpc('criar_solicitacao_compra', {
             p_solicitante_id: req.session.usuario.id,
             p_solicitante_email: req.session.usuario.email,
-            p_motivo: motivo,
-            p_itens: idsProdutos.map(produtoId => ({
-                produto_id: produtoId,
-                quantidade: itensPorProduto.get(produtoId)
-            }))
+            p_motivo: formulario.motivo,
+            p_itens: formulario.itens
         });
 
         if (error) throw error;
@@ -1615,11 +1700,184 @@ app.post('/compras', async (req, res) => {
         return redirecionarCompras(
             res,
             'mensagem',
-            `Solicitação nº ${String(codigo).padStart(5, '0')} criada com sucesso!`
+            `Solicitação nº ${formatarCodigoCompra(codigo)} criada com sucesso!`
         );
     } catch (erro) {
         console.error('Erro ao criar solicitação de compra:', erro);
-        return redirecionarCompras(res, 'erro', 'Não foi possível criar a solicitação de compra.');
+        return redirecionarAcaoCompra(res, 'nova', 'Não foi possível criar a solicitação de compra.');
+    }
+});
+
+
+// Valida se a solicitação pode ser editada/excluída pelo usuário.
+// Retorna { solicitacao } ou { erro }.
+async function carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, acao) {
+    const solicitacao = await buscarSolicitacaoCompra(codigo);
+
+    if (!solicitacao) {
+        return { erro: 'Solicitação não encontrada.' };
+    }
+
+    if (solicitacao.status !== 'Pendente') {
+        return { erro: `Somente solicitações pendentes podem ser ${acao}.` };
+    }
+
+    if (!podeGerenciarSolicitacao(req, solicitacao, podeAprovar)) {
+        return { erro: 'Você só pode alterar as suas próprias solicitações.' };
+    }
+
+    return { solicitacao };
+}
+
+
+// Página: editar solicitação. Sem código, mostra a lista para escolher.
+app.get('/compras/editar', async (req, res) => {
+    try {
+        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const codigo = lerCodigoSolicitacao(req);
+        let solicitacao = null;
+        let erro = req.query.erro || '';
+
+        if (codigo) {
+            const resultado = await carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, 'editadas');
+            solicitacao = resultado.solicitacao || null;
+            erro = resultado.erro || erro;
+        }
+
+        const [produtos, gerenciaveis] = await Promise.all([
+            solicitacao ? listarProdutosCompra() : [],
+            solicitacao ? [] : listarSolicitacoesGerenciaveis(req, podeAprovar)
+        ]);
+
+        return res.render('compras-form', {
+            modo: 'editar',
+            produtos,
+            solicitacao,
+            gerenciaveis,
+            erro
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir edição de solicitação de compra:', erro);
+        return redirecionarCompras(res, 'erro', 'Não foi possível abrir a edição da solicitação.');
+    }
+});
+
+
+// Salvar edição (só pendentes)
+app.post('/compras/:codigo/editar', async (req, res) => {
+    const codigo = lerCodigoSolicitacao(req);
+
+    try {
+        if (!codigo) {
+            return redirecionarAcaoCompra(res, 'editar', 'Código de solicitação inválido.');
+        }
+
+        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const resultado = await carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, 'editadas');
+
+        if (resultado.erro) {
+            return redirecionarAcaoCompra(res, 'editar', resultado.erro);
+        }
+
+        const formulario = await lerFormularioSolicitacao(req);
+
+        if (formulario.erro) {
+            return redirecionarAcaoCompra(res, 'editar', formulario.erro, codigo);
+        }
+
+        const { data: editou, error } = await supabaseAdmin.rpc('editar_solicitacao_compra', {
+            p_codigo: codigo,
+            p_motivo: formulario.motivo,
+            p_itens: formulario.itens
+        });
+
+        if (error) throw error;
+
+        if (!editou) {
+            return redirecionarAcaoCompra(res, 'editar', 'Solicitação não encontrada ou já decidida.');
+        }
+
+        return redirecionarCompras(
+            res,
+            'mensagem',
+            `Solicitação nº ${formatarCodigoCompra(codigo)} atualizada com sucesso!`
+        );
+    } catch (erro) {
+        console.error('Erro ao editar solicitação de compra:', erro);
+        return redirecionarAcaoCompra(
+            res,
+            'editar',
+            'Não foi possível salvar a solicitação. Verifique se o script database/solicitacoes_compra_edicao.sql foi executado no Supabase.',
+            codigo
+        );
+    }
+});
+
+
+// Página: excluir solicitação. Sem código, mostra a lista para escolher.
+app.get('/compras/excluir', async (req, res) => {
+    try {
+        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const codigo = lerCodigoSolicitacao(req);
+        let solicitacao = null;
+        let erro = req.query.erro || '';
+
+        if (codigo) {
+            const resultado = await carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, 'excluídas');
+            solicitacao = resultado.solicitacao || null;
+            erro = resultado.erro || erro;
+        }
+
+        return res.render('compras-excluir', {
+            solicitacao,
+            gerenciaveis: solicitacao ? [] : await listarSolicitacoesGerenciaveis(req, podeAprovar),
+            erro
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir exclusão de solicitação de compra:', erro);
+        return redirecionarCompras(res, 'erro', 'Não foi possível abrir a exclusão da solicitação.');
+    }
+});
+
+
+// Excluir (só pendentes; os itens saem junto pelo "on delete cascade")
+app.post('/compras/:codigo/excluir', async (req, res) => {
+    const codigo = lerCodigoSolicitacao(req);
+
+    try {
+        if (!codigo) {
+            return redirecionarAcaoCompra(res, 'excluir', 'Código de solicitação inválido.');
+        }
+
+        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const resultado = await carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, 'excluídas');
+
+        if (resultado.erro) {
+            return redirecionarAcaoCompra(res, 'excluir', resultado.erro);
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('solicitacoes_compra')
+            .delete()
+            .eq('codigo', codigo)
+            .eq('status', 'Pendente')
+            .select('codigo')
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            return redirecionarAcaoCompra(res, 'excluir', 'Solicitação não encontrada ou já decidida.');
+        }
+
+        return redirecionarCompras(
+            res,
+            'mensagem',
+            `Solicitação nº ${formatarCodigoCompra(codigo)} excluída.`
+        );
+    } catch (erro) {
+        console.error('Erro ao excluir solicitação de compra:', erro);
+        return redirecionarAcaoCompra(res, 'excluir', 'Não foi possível excluir a solicitação.', codigo);
     }
 });
 
