@@ -1671,7 +1671,7 @@ app.get('/compras', exigirPermissao('criarSolicitacaoCompra', 'aprovarSolicitaca
 });
 
 
-// Página: nova solicitação (abre em outra aba)
+// Página: nova solicitação
 app.get('/compras/nova', exigirPermissao('criarSolicitacaoCompra'), async (req, res) => {
     try {
         return res.render('compras-form', {

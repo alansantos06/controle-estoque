@@ -58,7 +58,7 @@
                     <% if (editando && solicitacao) { %>
                         <a href="/compras/editar" class="compra-botao-topo">← Outra solicitação</a>
                     <% } %>
-                    <button type="button" class="compra-botao-topo" data-fechar-aba>Fechar aba</button>
+                    <a href="/compras" class="compra-botao-topo">← Voltar às solicitações</a>
                 </div>
             </section>
 
@@ -130,9 +130,9 @@
                             </div>
 
                             <div class="acoes-formulario compra-acoes-form">
-                                <button type="button" class="compra-botao-secundario" data-fechar-aba>
+                                <a href="/compras" class="compra-botao-secundario">
                                     Cancelar
-                                </button>
+                                </a>
                                 <button type="submit" class="primary-link">
                                     <%= editando ? 'Salvar alterações' : 'Enviar solicitação' %>
                                 </button>

@@ -43,7 +43,7 @@
                     <% if (solicitacao) { %>
                         <a href="/compras/excluir" class="compra-botao-topo">← Outra solicitação</a>
                     <% } %>
-                    <button type="button" class="compra-botao-topo" data-fechar-aba>Fechar aba</button>
+                    <a href="/compras" class="compra-botao-topo">← Voltar às solicitações</a>
                 </div>
             </section>
 
@@ -99,9 +99,9 @@
                         onsubmit="return confirm('Excluir a solicitação <%= codigoFormatado %>? Esta ação não pode ser desfeita.');"
                     >
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="button" class="compra-botao-secundario" data-fechar-aba>
+                        <a href="/compras" class="compra-botao-secundario">
                             Cancelar
-                        </button>
+                        </a>
                         <button type="submit" class="compra-botao-excluir">
                             Excluir solicitação
                         </button>
@@ -118,6 +118,5 @@
     </div>
 
     <script src="/script.js"></script>
-    <script src="/compras-acao.js"></script>
 </body>
 </html>

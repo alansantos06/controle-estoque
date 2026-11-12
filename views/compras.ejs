@@ -38,17 +38,17 @@
                     <p>Peça a compra de produtos e acompanhe cada solicitação até o recebimento.</p>
                 </div>
 
-                <!-- Cada ação abre em uma nova aba -->
+                <!-- Cada ação abre a sua própria tela -->
                 <div class="compra-acoes-topo">
                     <% if (permissoes.criarSolicitacaoCompra) { %>
-                        <a href="/compras/nova" target="_blank" rel="noopener" class="primary-link">
+                        <a href="/compras/nova" class="primary-link">
                             ＋ Nova solicitação
                         </a>
                     <% } %>
-                    <a href="/compras/editar" target="_blank" rel="noopener" class="compra-botao-topo">
+                    <a href="/compras/editar" class="compra-botao-topo">
                         ✎ Editar
                     </a>
-                    <a href="/compras/excluir" target="_blank" rel="noopener" class="compra-botao-topo compra-botao-topo-perigo">
+                    <a href="/compras/excluir" class="compra-botao-topo compra-botao-topo-perigo">
                         🗑 Excluir
                     </a>
                 </div>
@@ -260,21 +260,7 @@
 
     <script>
         (function () {
-            // As ações abrem em outra aba. Quando uma delas conclui (e cai
-            // aqui com mensagem), avisa as outras abas da lista para atualizar.
-            var canal = 'BroadcastChannel' in window ? new BroadcastChannel('estoquepro-compras') : null;
-
-            if (canal) {
-                canal.onmessage = function (evento) {
-                    if (evento.data === 'atualizar') window.location.reload();
-                };
-
-                if (document.getElementById('mensagemSucesso')) {
-                    canal.postMessage('atualizar');
-                }
-            }
-
-            // Tira a mensagem da URL para não reaparecer (nem reavisar) ao recarregar
+            // Tira a mensagem da URL para não reaparecer ao recarregar
             var url = new URL(window.location.href);
             if (url.searchParams.has('mensagem') || url.searchParams.has('erro')) {
                 url.searchParams.delete('mensagem');

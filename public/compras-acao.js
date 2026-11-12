@@ -1,16 +1,5 @@
-// Páginas de nova / editar / excluir solicitação de compra (abertas em outra aba)
+// Telas de nova / editar solicitação de compra
 (function () {
-    // "Fechar aba" / "Cancelar": fecha a aba; se o navegador não deixar,
-    // volta para a lista de solicitações.
-    document.querySelectorAll('[data-fechar-aba]').forEach(function (botao) {
-        botao.addEventListener('click', function () {
-            window.close();
-            setTimeout(function () {
-                window.location.href = '/compras';
-            }, 150);
-        });
-    });
-
     // Linhas de produtos do formulário
     var lista = document.getElementById('listaItens');
     var botaoAdicionar = document.getElementById('botaoAdicionarItem');

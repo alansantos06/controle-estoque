@@ -2903,3 +2903,10 @@ html[data-theme="light"] .filtros-relatorio input[type="date"],
         align-items: flex-start;
     }
 }
+
+/* "Cancelar" das telas de solicitação de compra (link que volta à lista) */
+.compra-acoes-form a.compra-botao-secundario {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
