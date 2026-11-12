@@ -65,316 +65,6 @@ function exigirLogin(req, res, next) {
 }
 
 
-function exigirAdministrador(req, res, next) {
-    const emailUsuario = req.session?.usuario?.email
-        ?.trim()
-        .toLowerCase();
-
-    const emailAdministrador = process.env.ADMIN_EMAIL
-        ?.trim()
-        .toLowerCase();
-
-    if (!emailUsuario) {
-        return res.redirect('/login');
-    }
-
-    if (
-        !emailAdministrador ||
-        emailUsuario !== emailAdministrador
-    ) {
-        return res.status(403).send(
-            'Acesso negado. Somente o administrador pode realizar esta ação.'
-        );
-    }
-
-    return next();
-}
-
-
-
-
-// Diz se o usuário logado é o administrador ou tem permissão de
-// movimentar o estoque (mesma permissão da tela "Permissões de usuários").
-async function usuarioTemPermissaoMovimentacao(req) {
-    const emailUsuario = req.session?.usuario?.email
-        ?.trim()
-        .toLowerCase();
-
-    const emailAdministrador = process.env.ADMIN_EMAIL
-        ?.trim()
-        .toLowerCase();
-
-    if (emailUsuario && emailAdministrador && emailUsuario === emailAdministrador) {
-        return true;
-    }
-
-    if (!req.session?.usuario?.id) {
-        return false;
-    }
-
-    const { data, error } = await supabaseAdmin
-        .from('permissoes_usuarios')
-        .select('pode_movimentar_estoque')
-        .eq('usuario_id', req.session.usuario.id)
-        .maybeSingle();
-
-    if (error) throw error;
-
-    return data?.pode_movimentar_estoque === true;
-}
-
-
-async function exigirPermissaoMovimentacao(req, res, next) {
-    const emailUsuario = req.session?.usuario?.email
-        ?.trim()
-        .toLowerCase();
-
-    const emailAdministrador = process.env.ADMIN_EMAIL
-        ?.trim()
-        .toLowerCase();
-
-    // O administrador sempre tem permissão
-    if (
-        emailUsuario &&
-        emailAdministrador &&
-        emailUsuario === emailAdministrador
-    ) {
-        return next();
-    }
-
-    // Sem usuário autenticado, não permite continuar
-    if (!req.session?.usuario?.id) {
-        return res.redirect('/login');
-    }
-
-    try {
-        const { data, error } = await supabaseAdmin
-            .from('permissoes_usuarios')
-            .select('pode_movimentar_estoque')
-            .eq('usuario_id', req.session.usuario.id)
-            .maybeSingle();
-
-        if (error) {
-            console.error('Erro ao verificar permissão:', error);
-            return res.status(500).send(
-                'Não foi possível verificar suas permissões.'
-            );
-        }
-
-        if (!data?.pode_movimentar_estoque) {
-            return res.status(403).send(
-                'Você não tem permissão para movimentar o estoque.'
-            );
-        }
-
-        return next();
-    } catch (erro) {
-        console.error('Erro ao verificar permissão:', erro);
-        return res.status(500).send(
-            'Não foi possível verificar suas permissões.'
-        );
-    }
-}
-
-
-// Listar usuários e suas permissões
-app.get(
-    '/admin/permissoes',
-    exigirAdministrador,
-    async (req, res) => {
-        try {
-            const { data: resultado, error: erroUsuarios } =
-                await supabaseAdmin.auth.admin.listUsers({
-                    page: 1,
-                    perPage: 1000
-                });
-
-            if (erroUsuarios) {
-                console.error('Erro ao listar usuários:', erroUsuarios);
-                return res.status(500).send(
-                    'Não foi possível listar os usuários.'
-                );
-            }
-
-            const { data: permissoes, error: erroPermissoes } =
-                await supabaseAdmin
-                    .from('permissoes_usuarios')
-                    .select('usuario_id, pode_movimentar_estoque');
-
-            if (erroPermissoes) {
-                console.error('Erro ao consultar permissões:', erroPermissoes);
-                return res.status(500).send(
-                    'Não foi possível consultar as permissões.'
-                );
-            }
-
-            const mapaPermissoes = new Map(
-                (permissoes || []).map(permissao => [
-                    permissao.usuario_id,
-                    permissao.pode_movimentar_estoque
-                ])
-            );
-
-            const emailAdministrador = process.env.ADMIN_EMAIL
-                ?.trim()
-                .toLowerCase();
-
-            const usuarios = resultado.users.map(usuario => {
-                const ehAdministrador =
-                    usuario.email?.trim().toLowerCase() === emailAdministrador;
-
-                return {
-                    id: usuario.id,
-                    email: usuario.email || '(sem e-mail)',
-                    ehAdministrador,
-                    podeMovimentar: ehAdministrador ||
-                        mapaPermissoes.get(usuario.id) === true
-                };
-            });
-
-            return res.render('permissoes', {
-                usuarios,
-                mensagem: req.query.mensagem || ''
-            });
-        } catch (erro) {
-            console.error('Erro ao carregar permissões:', erro);
-            return res.status(500).send(
-                'Ocorreu um erro ao carregar o gerenciamento de permissões.'
-            );
-        }
-    }
-);
-
-
-// Conceder ou retirar permissão de movimentação
-app.post(
-    '/admin/permissoes/:usuarioId',
-    exigirAdministrador,
-    async (req, res) => {
-        try {
-            const usuarioId = req.params.usuarioId;
-            const acao = req.body.acao;
-
-            if (
-                !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(usuarioId) ||
-                !['conceder', 'retirar'].includes(acao)
-            ) {
-                return res.status(400).send('Dados inválidos.');
-            }
-
-            const emailAdministrador = process.env.ADMIN_EMAIL
-                ?.trim()
-                .toLowerCase();
-
-            const { data: usuario, error: erroUsuario } =
-                await supabaseAdmin.auth.admin.getUserById(usuarioId);
-
-            if (erroUsuario || !usuario.user) {
-                return res.status(404).send('Usuário não encontrado.');
-            }
-
-            if (
-                usuario.user.email?.trim().toLowerCase() === emailAdministrador
-            ) {
-                return res.status(400).send(
-                    'O administrador já possui acesso permanente.'
-                );
-            }
-
-            if (acao === 'conceder') {
-                const { error } = await supabaseAdmin
-                    .from('permissoes_usuarios')
-                    .upsert(
-                        {
-                            usuario_id: usuarioId,
-                            pode_movimentar_estoque: true
-                        },
-                        { onConflict: 'usuario_id' }
-                    );
-
-                if (error) throw error;
-            } else {
-                const { error } = await supabaseAdmin
-                    .from('permissoes_usuarios')
-                    .delete()
-                    .eq('usuario_id', usuarioId);
-
-                if (error) throw error;
-            }
-
-            return res.redirect(
-                '/admin/permissoes?mensagem=' +
-                (acao === 'conceder' ? 'concedida' : 'retirada')
-            );
-        } catch (erro) {
-            console.error('Erro ao alterar permissão:', erro);
-            return res.status(500).send(
-                'Não foi possível alterar a permissão.'
-            );
-        }
-    }
-);
-
-
-
-
-app.get('/admin/permissoes', exigirAdministrador, async (req, res) => {
-    try {
-        const { data: resultado, error: erroUsuarios } =
-            await supabaseAdmin.auth.admin.listUsers({
-                page: 1,
-                perPage: 1000
-            });
-
-        if (erroUsuarios) {
-            console.error('Erro ao listar usuários:', erroUsuarios);
-            return res.status(500).send('Erro ao listar usuários.');
-        }
-
-        const { data: permissoes, error: erroPermissoes } =
-            await supabaseAdmin
-                .from('permissoes_usuarios')
-                .select('usuario_id, pode_movimentar_estoque');
-
-        if (erroPermissoes) {
-            console.error('Erro ao buscar permissões:', erroPermissoes);
-            return res.status(500).send('Erro ao buscar permissões.');
-        }
-
-        const mapaPermissoes = new Map(
-            (permissoes || []).map(p => [
-                p.usuario_id,
-                p.pode_movimentar_estoque
-            ])
-        );
-
-        const emailAdministrador = process.env.ADMIN_EMAIL
-            ?.trim()
-            .toLowerCase();
-
-        const usuarios = resultado.users.map(usuario => {
-            const ehAdministrador =
-                usuario.email?.trim().toLowerCase() === emailAdministrador;
-
-            return {
-                id: usuario.id,
-                email: usuario.email || '(sem e-mail)',
-                ehAdministrador,
-                podeMovimentar:
-                    ehAdministrador ||
-                    mapaPermissoes.get(usuario.id) === true
-            };
-        });
-
-        return res.render('permissoes', {
-            usuarios,
-            mensagem: req.query.mensagem || ''
-        });
-    } catch (erro) {
-        console.error('Erro ao abrir permissões:', erro);
-        return res.status(500).send('Não foi possível carregar as permissões.');
-    }
-});
 
 
 
@@ -397,6 +87,325 @@ app.use((req, res, next) => {
 
 // Configuração do EJS
 app.set('view engine', 'ejs');
+
+
+/* ========================================
+   PERMISSÕES DE USUÁRIOS
+======================================== */
+
+// Cada grupo vira um bloco na tela de configuração do usuário e cada
+// item vira uma caixa de marcar. "coluna" é a coluna da tabela
+// permissoes_usuarios (ver database/permissoes_usuarios.sql).
+const GRUPOS_PERMISSOES = [
+    {
+        nome: 'Cadastro de produtos',
+        icone: '▤',
+        itens: [
+            {
+                chave: 'cadastrarProdutos',
+                coluna: 'pode_cadastrar_produtos',
+                nome: 'Cadastrar, editar e excluir produtos',
+                descricao: 'Libera o menu "Cadastrar produto" e os botões de editar e excluir na lista de produtos.'
+            }
+        ]
+    },
+    {
+        nome: 'Movimentação',
+        icone: '⇄',
+        itens: [
+            {
+                chave: 'movimentarEstoque',
+                coluna: 'pode_movimentar_estoque',
+                nome: 'Registrar entradas e saídas',
+                descricao: 'Libera a tela "Ajuste de estoque".'
+            }
+        ]
+    },
+    {
+        nome: 'Requisição',
+        icone: '⇥',
+        itens: [
+            {
+                chave: 'criarRequisicao',
+                coluna: 'pode_criar_requisicao',
+                nome: 'Criar requisições',
+                descricao: 'Pode solicitar materiais do estoque.'
+            },
+            {
+                chave: 'aprovarRequisicao',
+                coluna: 'pode_aprovar_requisicao',
+                nome: 'Aprovar e rejeitar requisições',
+                descricao: 'Ao aprovar, a quantidade é descontada do estoque.'
+            }
+        ]
+    },
+    {
+        nome: 'Solicitação de compra',
+        icone: '🛒',
+        itens: [
+            {
+                chave: 'criarSolicitacaoCompra',
+                coluna: 'pode_criar_solicitacao_compra',
+                nome: 'Criar solicitações de compra',
+                descricao: 'Pode criar, editar e excluir as próprias solicitações pendentes.'
+            },
+            {
+                chave: 'aprovarSolicitacaoCompra',
+                coluna: 'pode_aprovar_solicitacao_compra',
+                nome: 'Aprovar, rejeitar e receber compras',
+                descricao: 'Também pode editar e excluir solicitações pendentes de qualquer usuário. Ao receber, os produtos entram no estoque.'
+            }
+        ]
+    },
+    {
+        nome: 'Permissões de usuários',
+        icone: '♙',
+        itens: [
+            {
+                chave: 'gerenciarPermissoes',
+                coluna: 'pode_gerenciar_permissoes',
+                nome: 'Gerenciar permissões',
+                descricao: 'Pode abrir esta tela e alterar as permissões dos outros usuários.'
+            }
+        ]
+    }
+];
+
+const ITENS_PERMISSOES = GRUPOS_PERMISSOES.flatMap(grupo => grupo.itens);
+const COLUNAS_PERMISSOES = ITENS_PERMISSOES.map(item => item.coluna);
+
+function permissoesVazias(valor = false) {
+    return Object.fromEntries(ITENS_PERMISSOES.map(item => [item.chave, valor]));
+}
+
+// Converte uma linha da tabela em { cadastrarProdutos: true, ... }
+function linhaParaPermissoes(linha) {
+    return Object.fromEntries(
+        ITENS_PERMISSOES.map(item => [item.chave, linha?.[item.coluna] === true])
+    );
+}
+
+function emailEhAdministrador(email) {
+    const emailAdministrador = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    return Boolean(emailAdministrador) && email?.trim().toLowerCase() === emailAdministrador;
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+
+// Carrega as permissões do usuário logado em req.permissoes e nas views.
+// O administrador tem todas.
+app.use(async (req, res, next) => {
+    req.permissoes = permissoesVazias();
+
+    try {
+        if (req.session?.usuario) {
+            if (emailEhAdministrador(req.session.usuario.email)) {
+                req.permissoes = permissoesVazias(true);
+            } else {
+                const { data, error } = await supabaseAdmin
+                    .from('permissoes_usuarios')
+                    .select(COLUNAS_PERMISSOES.join(', '))
+                    .eq('usuario_id', req.session.usuario.id)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                req.permissoes = linhaParaPermissoes(data);
+            }
+        }
+    } catch (erro) {
+        console.error('Erro ao carregar permissões do usuário:', erro);
+        return res.status(500).send(
+            'Não foi possível verificar suas permissões. ' +
+            'Verifique se o script database/permissoes_usuarios.sql foi executado no Supabase.'
+        );
+    }
+
+    res.locals.permissoes = req.permissoes;
+    return next();
+});
+
+
+// Libera a rota se o usuário tiver PELO MENOS UMA das permissões
+function exigirPermissao(...chaves) {
+    return (req, res, next) => {
+        if (chaves.some(chave => req.permissoes?.[chave])) {
+            return next();
+        }
+
+        return res.status(403).send(
+            'Acesso negado. Você não tem permissão para acessar esta área. ' +
+            'Fale com o administrador do sistema.'
+        );
+    };
+}
+
+
+// Lista de usuários (cada um abre a sua configuração)
+app.get('/admin/permissoes', exigirPermissao('gerenciarPermissoes'), async (req, res) => {
+    try {
+        const [
+            { data: resultado, error: erroUsuarios },
+            { data: linhas, error: erroPermissoes }
+        ] = await Promise.all([
+            supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+            supabaseAdmin
+                .from('permissoes_usuarios')
+                .select(['usuario_id', ...COLUNAS_PERMISSOES].join(', '))
+        ]);
+
+        if (erroUsuarios) throw erroUsuarios;
+        if (erroPermissoes) throw erroPermissoes;
+
+        const mapaPermissoes = new Map(
+            (linhas || []).map(linha => [linha.usuario_id, linhaParaPermissoes(linha)])
+        );
+
+        const usuarios = (resultado?.users || [])
+            .map(usuario => {
+                const ehAdministrador = emailEhAdministrador(usuario.email);
+                const permissoes = ehAdministrador
+                    ? permissoesVazias(true)
+                    : mapaPermissoes.get(usuario.id) || permissoesVazias();
+
+                return {
+                    id: usuario.id,
+                    email: usuario.email || '(sem e-mail)',
+                    ehAdministrador,
+                    ehVoceMesmo: usuario.id === req.session.usuario.id,
+                    gruposLiberados: GRUPOS_PERMISSOES
+                        .filter(grupo => grupo.itens.some(item => permissoes[item.chave]))
+                        .map(grupo => grupo.nome),
+                    totalMarcadas: ITENS_PERMISSOES.filter(item => permissoes[item.chave]).length
+                };
+            })
+            .sort((a, b) => Number(b.ehAdministrador) - Number(a.ehAdministrador) ||
+                a.email.localeCompare(b.email));
+
+        return res.render('permissoes', {
+            usuarios,
+            totalPermissoes: ITENS_PERMISSOES.length,
+            mensagem: req.query.mensagem || '',
+            erro: req.query.erro || ''
+        });
+    } catch (erro) {
+        console.error('Erro ao carregar permissões:', erro);
+        return res.status(500).send(
+            'Não foi possível carregar as permissões. ' +
+            'Verifique se o script database/permissoes_usuarios.sql foi executado no Supabase.'
+        );
+    }
+});
+
+
+// Busca o usuário a configurar e diz se ele pode ser alterado
+async function carregarUsuarioPermissao(req) {
+    const usuarioId = req.params.usuarioId;
+
+    if (!UUID_REGEX.test(usuarioId)) {
+        return { erro: 'Usuário inválido.' };
+    }
+
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(usuarioId);
+
+    if (error || !data?.user) {
+        return { erro: 'Usuário não encontrado.' };
+    }
+
+    const usuario = data.user;
+    const ehAdministrador = emailEhAdministrador(usuario.email);
+    const ehVoceMesmo = usuario.id === req.session.usuario.id;
+
+    let bloqueio = '';
+    if (ehAdministrador) {
+        bloqueio = 'O administrador tem acesso total e permanente.';
+    } else if (ehVoceMesmo) {
+        bloqueio = 'Você não pode alterar as suas próprias permissões.';
+    }
+
+    return { usuario, ehAdministrador, bloqueio };
+}
+
+
+// Configuração de um usuário: caixas de marcar por área
+app.get('/admin/permissoes/:usuarioId', exigirPermissao('gerenciarPermissoes'), async (req, res) => {
+    try {
+        const resultado = await carregarUsuarioPermissao(req);
+
+        if (resultado.erro) {
+            return res.redirect('/admin/permissoes?erro=' + encodeURIComponent(resultado.erro));
+        }
+
+        let permissoes = permissoesVazias(true);
+
+        if (!resultado.ehAdministrador) {
+            const { data, error } = await supabaseAdmin
+                .from('permissoes_usuarios')
+                .select(COLUNAS_PERMISSOES.join(', '))
+                .eq('usuario_id', resultado.usuario.id)
+                .maybeSingle();
+
+            if (error) throw error;
+            permissoes = linhaParaPermissoes(data);
+        }
+
+        return res.render('permissoes-usuario', {
+            usuario: {
+                id: resultado.usuario.id,
+                email: resultado.usuario.email || '(sem e-mail)',
+                criadoEm: resultado.usuario.created_at,
+                ultimoAcesso: resultado.usuario.last_sign_in_at
+            },
+            grupos: GRUPOS_PERMISSOES,
+            permissoesUsuario: permissoes,
+            bloqueio: resultado.bloqueio,
+            mensagem: req.query.mensagem || ''
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir permissões do usuário:', erro);
+        return res.status(500).send('Não foi possível carregar as permissões do usuário.');
+    }
+});
+
+
+// Salvar as caixas marcadas
+app.post('/admin/permissoes/:usuarioId', exigirPermissao('gerenciarPermissoes'), async (req, res) => {
+    try {
+        const resultado = await carregarUsuarioPermissao(req);
+
+        if (resultado.erro || resultado.bloqueio) {
+            return res.redirect(
+                '/admin/permissoes?erro=' + encodeURIComponent(resultado.erro || resultado.bloqueio)
+            );
+        }
+
+        // Só aceita chaves conhecidas; caixa desmarcada não é enviada = false
+        const marcadas = new Set([].concat(req.body.permissoes || []));
+
+        const linha = { usuario_id: resultado.usuario.id };
+        ITENS_PERMISSOES.forEach(item => {
+            linha[item.coluna] = marcadas.has(item.chave);
+        });
+
+        const { error } = await supabaseAdmin
+            .from('permissoes_usuarios')
+            .upsert(linha, { onConflict: 'usuario_id' });
+
+        if (error) throw error;
+
+        return res.redirect(
+            `/admin/permissoes/${resultado.usuario.id}?mensagem=` +
+            encodeURIComponent('Permissões salvas com sucesso!')
+        );
+    } catch (erro) {
+        console.error('Erro ao salvar permissões:', erro);
+        return res.redirect(
+            '/admin/permissoes?erro=' + encodeURIComponent('Não foi possível salvar as permissões.')
+        );
+    }
+});
+
 
 // Página inicial
 
@@ -608,14 +617,14 @@ app.get('/', async (req, res) => {
 
 
 // Página de cadastro de novo produto
-app.get('/produtos/novo', (req, res) => {
+app.get('/produtos/novo', exigirPermissao('cadastrarProdutos'), (req, res) => {
     res.render('novo-produto', {
         erro: req.query.erro || ''
     });
 });
 
 // Página de edição de produto
-app.get('/produtos/:id/editar', async (req, res) => {
+app.get('/produtos/:id/editar', exigirPermissao('cadastrarProdutos'), async (req, res) => {
 
     const { id } = req.params;
 
@@ -637,7 +646,7 @@ app.get('/produtos/:id/editar', async (req, res) => {
 });
 
 // Atualizar produto
-app.post('/produtos/:id/editar', async (req, res) => {
+app.post('/produtos/:id/editar', exigirPermissao('cadastrarProdutos'), async (req, res) => {
 
     const { id } = req.params;
 
@@ -691,7 +700,7 @@ app.post('/produtos/:id/editar', async (req, res) => {
 });
 
 // Cadastrar novo produto
-app.post('/produtos', async (req, res) => {
+app.post('/produtos', exigirPermissao('cadastrarProdutos'), async (req, res) => {
 
     const {
         nome,
@@ -807,7 +816,7 @@ app.get('/produtos', async (req, res) => {
 
 
  // Excluir produto
-app.post('/produtos/:id/excluir', async (req, res) => {
+app.post('/produtos/:id/excluir', exigirPermissao('cadastrarProdutos'), async (req, res) => {
 
     const { id } = req.params;
 
@@ -844,7 +853,7 @@ app.post('/produtos/:id/excluir', async (req, res) => {
 
 
 
-app.get('/requisicoes', async (req, res) => {
+app.get('/requisicoes', exigirPermissao('criarRequisicao', 'aprovarRequisicao'), async (req, res) => {
     try {
         const { data: requisicoes, error: erroRequisicoes } = await supabase
             .from('requisicoes')
@@ -886,7 +895,7 @@ app.get('/requisicoes', async (req, res) => {
 
 
 /* Criar uma nova requisição */
-app.post('/requisicoes', async (req, res) => {
+app.post('/requisicoes', exigirPermissao('criarRequisicao'), async (req, res) => {
     try {
         const produtoId = Number(req.body.produto_id);
         const quantidade = Number(req.body.quantidade);
@@ -952,7 +961,7 @@ app.post('/requisicoes', async (req, res) => {
 /* Aprovar uma requisição e descontar o estoque */
 app.post(
     '/requisicoes/:id/aprovar',
-    exigirAdministrador,
+    exigirPermissao('aprovarRequisicao'),
     async (req, res) => {
     try {
         const requisicaoId = Number(req.params.id);
@@ -1000,7 +1009,7 @@ app.post(
 /* Rejeitar uma requisição sem alterar o estoque */
 app.post(
     '/requisicoes/:id/rejeitar',
-    exigirAdministrador,
+    exigirPermissao('aprovarRequisicao'),
     async (req, res) => {
     try {
         const requisicaoId = Number(req.params.id);
@@ -1253,7 +1262,7 @@ app.get('/relatorios', async (req, res) => {
 
 
 // Página de nova movimentação
-app.get('/movimentacoes/nova', async (req, res) => {
+app.get('/movimentacoes/nova', exigirPermissao('movimentarEstoque'), async (req, res) => {
 
     const { data: produtos, error } = await supabase
         .from('produtos')
@@ -1352,7 +1361,7 @@ app.get('/relatorios/exportar', async (req, res) => {
  // Registrar movimentação
 app.post(
     '/movimentacoes',
-    exigirPermissaoMovimentacao,
+    exigirPermissao('movimentarEstoque'),
     async (req, res) => {
 
     const { produto_id, tipo, quantidade } = req.body;
@@ -1578,7 +1587,7 @@ async function lerFormularioSolicitacao(req) {
 
 
 // Tela de solicitações de compra (histórico com filtros)
-app.get('/compras', async (req, res) => {
+app.get('/compras', exigirPermissao('criarSolicitacaoCompra', 'aprovarSolicitacaoCompra'), async (req, res) => {
     try {
         const filtros = {
             codigo: String(req.query.codigo || '').replace(/\D/g, ''),
@@ -1627,13 +1636,13 @@ app.get('/compras', async (req, res) => {
 
         const [
             { data: solicitacoes, error: erroSolicitacoes },
-            { data: listaUsuarios, error: erroUsuarios },
-            podeAprovar
+            { data: listaUsuarios, error: erroUsuarios }
         ] = await Promise.all([
             consulta,
-            supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-            usuarioTemPermissaoMovimentacao(req)
+            supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
         ]);
+
+        const podeAprovar = req.permissoes.aprovarSolicitacaoCompra;
 
         if (erroSolicitacoes) throw erroSolicitacoes;
         if (erroUsuarios) throw erroUsuarios;
@@ -1663,7 +1672,7 @@ app.get('/compras', async (req, res) => {
 
 
 // Página: nova solicitação (abre em outra aba)
-app.get('/compras/nova', async (req, res) => {
+app.get('/compras/nova', exigirPermissao('criarSolicitacaoCompra'), async (req, res) => {
     try {
         return res.render('compras-form', {
             modo: 'nova',
@@ -1680,7 +1689,7 @@ app.get('/compras/nova', async (req, res) => {
 
 
 // Criar uma nova solicitação de compra
-app.post('/compras', async (req, res) => {
+app.post('/compras', exigirPermissao('criarSolicitacaoCompra'), async (req, res) => {
     try {
         const formulario = await lerFormularioSolicitacao(req);
 
@@ -1731,9 +1740,9 @@ async function carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, acao) {
 
 
 // Página: editar solicitação. Sem código, mostra a lista para escolher.
-app.get('/compras/editar', async (req, res) => {
+app.get('/compras/editar', exigirPermissao('criarSolicitacaoCompra', 'aprovarSolicitacaoCompra'), async (req, res) => {
     try {
-        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const podeAprovar = req.permissoes.aprovarSolicitacaoCompra;
         const codigo = lerCodigoSolicitacao(req);
         let solicitacao = null;
         let erro = req.query.erro || '';
@@ -1764,7 +1773,7 @@ app.get('/compras/editar', async (req, res) => {
 
 
 // Salvar edição (só pendentes)
-app.post('/compras/:codigo/editar', async (req, res) => {
+app.post('/compras/:codigo/editar', exigirPermissao('criarSolicitacaoCompra', 'aprovarSolicitacaoCompra'), async (req, res) => {
     const codigo = lerCodigoSolicitacao(req);
 
     try {
@@ -1772,7 +1781,7 @@ app.post('/compras/:codigo/editar', async (req, res) => {
             return redirecionarAcaoCompra(res, 'editar', 'Código de solicitação inválido.');
         }
 
-        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const podeAprovar = req.permissoes.aprovarSolicitacaoCompra;
         const resultado = await carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, 'editadas');
 
         if (resultado.erro) {
@@ -1815,9 +1824,9 @@ app.post('/compras/:codigo/editar', async (req, res) => {
 
 
 // Página: excluir solicitação. Sem código, mostra a lista para escolher.
-app.get('/compras/excluir', async (req, res) => {
+app.get('/compras/excluir', exigirPermissao('criarSolicitacaoCompra', 'aprovarSolicitacaoCompra'), async (req, res) => {
     try {
-        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const podeAprovar = req.permissoes.aprovarSolicitacaoCompra;
         const codigo = lerCodigoSolicitacao(req);
         let solicitacao = null;
         let erro = req.query.erro || '';
@@ -1841,7 +1850,7 @@ app.get('/compras/excluir', async (req, res) => {
 
 
 // Excluir (só pendentes; os itens saem junto pelo "on delete cascade")
-app.post('/compras/:codigo/excluir', async (req, res) => {
+app.post('/compras/:codigo/excluir', exigirPermissao('criarSolicitacaoCompra', 'aprovarSolicitacaoCompra'), async (req, res) => {
     const codigo = lerCodigoSolicitacao(req);
 
     try {
@@ -1849,7 +1858,7 @@ app.post('/compras/:codigo/excluir', async (req, res) => {
             return redirecionarAcaoCompra(res, 'excluir', 'Código de solicitação inválido.');
         }
 
-        const podeAprovar = await usuarioTemPermissaoMovimentacao(req);
+        const podeAprovar = req.permissoes.aprovarSolicitacaoCompra;
         const resultado = await carregarSolicitacaoGerenciavel(req, codigo, podeAprovar, 'excluídas');
 
         if (resultado.erro) {
@@ -1883,7 +1892,7 @@ app.post('/compras/:codigo/excluir', async (req, res) => {
 
 
 // Aprovar: Pendente → Comprada
-app.post('/compras/:codigo/aprovar', exigirPermissaoMovimentacao, async (req, res) => {
+app.post('/compras/:codigo/aprovar', exigirPermissao('aprovarSolicitacaoCompra'), async (req, res) => {
     try {
         const codigo = lerCodigoSolicitacao(req);
 
@@ -1918,7 +1927,7 @@ app.post('/compras/:codigo/aprovar', exigirPermissaoMovimentacao, async (req, re
 
 
 // Rejeitar: Pendente → Rejeitada (exige motivo)
-app.post('/compras/:codigo/rejeitar', exigirPermissaoMovimentacao, async (req, res) => {
+app.post('/compras/:codigo/rejeitar', exigirPermissao('aprovarSolicitacaoCompra'), async (req, res) => {
     try {
         const codigo = lerCodigoSolicitacao(req);
         const motivo = String(req.body.motivo_rejeicao || '').trim();
@@ -1955,7 +1964,7 @@ app.post('/compras/:codigo/rejeitar', exigirPermissaoMovimentacao, async (req, r
 
 
 // Receber: Comprada → Recebida (dá entrada no estoque)
-app.post('/compras/:codigo/receber', exigirPermissaoMovimentacao, async (req, res) => {
+app.post('/compras/:codigo/receber', exigirPermissao('aprovarSolicitacaoCompra'), async (req, res) => {
     try {
         const codigo = lerCodigoSolicitacao(req);
 

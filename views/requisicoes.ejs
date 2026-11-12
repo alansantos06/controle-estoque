@@ -39,6 +39,7 @@
                 </div>
             <% } %>
 
+            <% if (permissoes.criarRequisicao) { %>
             <section class="panel-card requisicoes-card">
                 <div class="panel-header">
                     <div>
@@ -104,6 +105,7 @@
                     </div>
                 </form>
             </section>
+            <% } %>
 
             <section class="panel-card requisicoes-card">
                 <div class="panel-header">
@@ -133,7 +135,7 @@
                                     <th>Data</th>
                                     <th>Status</th>
                                     <th>Observação</th>
-                                    <th>Ações</th>
+                                    <% if (permissoes.aprovarRequisicao) { %><th>Ações</th><% } %>
                                 </tr>
                             </thead>
 
@@ -163,6 +165,7 @@
 
                                         <td><%= requisicao.observacao || '-' %></td>
 
+                                        <% if (permissoes.aprovarRequisicao) { %>
                                         <td>
                                             <% if (requisicao.status === 'Pendente') { %>
                                                 <div class="acoes-requisicao">
@@ -203,6 +206,7 @@
                                                 <span>Decidida</span>
                                             <% } %>
                                         </td>
+                                        <% } %>
                                     </tr>
                                 <% }) %>
                             </tbody>

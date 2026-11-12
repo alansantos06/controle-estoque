@@ -40,9 +40,11 @@
 
                 <!-- Cada ação abre em uma nova aba -->
                 <div class="compra-acoes-topo">
-                    <a href="/compras/nova" target="_blank" rel="noopener" class="primary-link">
-                        ＋ Nova solicitação
-                    </a>
+                    <% if (permissoes.criarSolicitacaoCompra) { %>
+                        <a href="/compras/nova" target="_blank" rel="noopener" class="primary-link">
+                            ＋ Nova solicitação
+                        </a>
+                    <% } %>
                     <a href="/compras/editar" target="_blank" rel="noopener" class="compra-botao-topo">
                         ✎ Editar
                     </a>

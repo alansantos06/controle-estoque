@@ -26,9 +26,11 @@
                     <p>Acompanhe seus produtos e as principais informações do almoxarifado.</p>
                 </div>
 
-                <a href="/produtos/novo" class="primary-link">
-                    ＋ Cadastrar produto
-                </a>
+                <% if (permissoes.cadastrarProdutos) { %>
+                    <a href="/produtos/novo" class="primary-link">
+                        ＋ Cadastrar produto
+                    </a>
+                <% } %>
             </section>
 
             <section class="dashboard-cards">

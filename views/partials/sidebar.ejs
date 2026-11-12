@@ -1,4 +1,4 @@
-
+<% const p = typeof permissoes !== 'undefined' ? permissoes : {}; %>
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon">E</div>
@@ -21,15 +21,19 @@
             Produtos
         </a>
 
-        <a href="/produtos/novo" class="menu-link <%= paginaAtiva === 'novo-produto' ? 'ativo' : '' %>">
-            <span class="menu-icon">＋</span>
-            Cadastrar produto
-        </a>
+        <% if (p.cadastrarProdutos) { %>
+            <a href="/produtos/novo" class="menu-link <%= paginaAtiva === 'novo-produto' ? 'ativo' : '' %>">
+                <span class="menu-icon">＋</span>
+                Cadastrar produto
+            </a>
+        <% } %>
 
-        <a href="/movimentacoes/nova" class="menu-link <%= paginaAtiva === 'movimentacao' ? 'ativo' : '' %>">
-            <span class="menu-icon">⇄</span>
-            Ajuste de estoque
-        </a>
+        <% if (p.movimentarEstoque) { %>
+            <a href="/movimentacoes/nova" class="menu-link <%= paginaAtiva === 'movimentacao' ? 'ativo' : '' %>">
+                <span class="menu-icon">⇄</span>
+                Ajuste de estoque
+            </a>
+        <% } %>
 
         <a href="/movimentacoes" class="menu-link <%= paginaAtiva === 'historico' ? 'ativo' : '' %>">
             <span class="menu-icon">◷</span>
@@ -45,24 +49,26 @@
     <div class="sidebar-section-title">OPERAÇÕES</div>
 
     <nav class="sidebar-nav">
-        <a href="/requisicoes" class="menu-link <%= paginaAtiva === 'requisicoes' ? 'ativo' : '' %>">
-            <span class="menu-icon">⇥</span>
-            Requisições
-        </a>
+        <% if (p.criarRequisicao || p.aprovarRequisicao) { %>
+            <a href="/requisicoes" class="menu-link <%= paginaAtiva === 'requisicoes' ? 'ativo' : '' %>">
+                <span class="menu-icon">⇥</span>
+                Requisições
+            </a>
+        <% } %>
 
-        <% if (ehAdministrador) { %>
+        <% if (p.criarSolicitacaoCompra || p.aprovarSolicitacaoCompra) { %>
+            <a href="/compras" class="menu-link <%= paginaAtiva === 'compras' ? 'ativo' : '' %>">
+                <span class="menu-icon">🛒</span>
+                Solicitações de compra
+            </a>
+        <% } %>
+
+        <% if (p.gerenciarPermissoes) { %>
             <a href="/admin/permissoes" class="menu-link <%= paginaAtiva === 'permissoes' ? 'ativo' : '' %>">
                 <span class="menu-icon">♙</span>
                 Permissões de usuários
             </a>
         <% } %>
-
-        
-
-        <a href="/compras" class="menu-link <%= paginaAtiva === 'compras' ? 'ativo' : '' %>">
-            <span class="menu-icon">🛒</span>
-            Solicitações de compra
-        </a>
     </nav>
 
     <div class="sidebar-footer">

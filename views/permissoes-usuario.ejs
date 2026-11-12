@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permissões do usuário | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body class="dashboard-page">
+    <%
+        const formatarData = (valor) => valor
+            ? new Date(valor).toLocaleString('pt-BR', {
+                timeZone: 'America/Sao_Paulo',
+                dateStyle: 'short',
+                timeStyle: 'short'
+            })
+            : 'Nunca';
+        const somenteLeitura = Boolean(bloqueio);
+    %>
+
+    <div class="app-layout">
+
+        <%- include('partials/sidebar', { paginaAtiva: 'permissoes' }) %>
+
+        <main class="dashboard-main">
+
+            <%- include('partials/header', {
+                paginaAtiva: 'permissoes',
+                tituloPagina: 'Permissões do usuário'
+            }) %>
+
+            <section class="welcome-panel">
+                <div class="perm-cabecalho">
+                    <div class="perm-avatar perm-avatar-grande" aria-hidden="true">
+                        <%= usuario.email.charAt(0).toUpperCase() %>
+                    </div>
+                    <div>
+                        <p class="welcome-label">CONFIGURAÇÃO DO USUÁRIO</p>
+                        <h2><%= usuario.email %></h2>
+                        <p>
+                            Cadastrado em <%= formatarData(usuario.criadoEm) %> ·
+                            Último acesso: <%= formatarData(usuario.ultimoAcesso) %>
+                        </p>
+                    </div>
+                </div>
+
+                <a href="/admin/permissoes" class="compra-botao-topo">← Voltar aos usuários</a>
+            </section>
+
+            <% if (mensagem) { %>
+                <div class="mensagem-sucesso" id="mensagemSucesso" role="status"><%= mensagem %></div>
+            <% } %>
+
+            <% if (bloqueio) { %>
+                <div class="perm-aviso" role="note"><%= bloqueio %></div>
+            <% } %>
+
+            <form action="/admin/permissoes/<%= usuario.id %>" method="POST" id="formPermissoes">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <% if (!somenteLeitura) { %>
+                    <div class="perm-barra">
+                        <span id="permResumo" aria-live="polite"></span>
+                        <div class="perm-barra-botoes">
+                            <button type="button" class="compra-botao-topo" data-marcar="todas">Marcar todas</button>
+                            <button type="button" class="compra-botao-topo" data-marcar="nenhuma">Desmarcar todas</button>
+                        </div>
+                    </div>
+                <% } %>
+
+                <div class="perm-grupos">
+                    <% grupos.forEach(grupo => { %>
+                        <fieldset class="perm-grupo" <%= somenteLeitura ? 'disabled' : '' %>>
+                            <legend>
+                                <span class="perm-grupo-icone" aria-hidden="true"><%= grupo.icone %></span>
+                                <%= grupo.nome %>
+                            </legend>
+
+                            <% grupo.itens.forEach(item => { %>
+                                <label class="perm-item">
+                                    <input
+                                        type="checkbox"
+                                        name="permissoes"
+                                        value="<%= item.chave %>"
+                                        <%= permissoesUsuario[item.chave] ? 'checked' : '' %>
+                                    >
+                                    <span class="perm-check" aria-hidden="true"></span>
+                                    <span class="perm-item-texto">
+                                        <strong><%= item.nome %></strong>
+                                        <small><%= item.descricao %></small>
+                                    </span>
+                                </label>
+                            <% }) %>
+                        </fieldset>
+                    <% }) %>
+                </div>
+
+                <% if (!somenteLeitura) { %>
+                    <div class="acoes-formulario compra-acoes-form perm-acoes">
+                        <a href="/admin/permissoes" class="compra-botao-secundario">Cancelar</a>
+                        <button type="submit" class="primary-link">Salvar permissões</button>
+                    </div>
+                <% } %>
+            </form>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+    <script>
+        (function () {
+            var form = document.getElementById('formPermissoes');
+            var resumo = document.getElementById('permResumo');
+            var caixas = form.querySelectorAll('input[type="checkbox"]');
+
+            function atualizarResumo() {
+                if (!resumo) return;
+                var marcadas = form.querySelectorAll('input[type="checkbox"]:checked').length;
+                resumo.textContent = marcadas + ' de ' + caixas.length + ' permissões marcadas';
+            }
+
+            form.addEventListener('change', atualizarResumo);
+
+            form.querySelectorAll('[data-marcar]').forEach(function (botao) {
+                botao.addEventListener('click', function () {
+                    var marcar = botao.getAttribute('data-marcar') === 'todas';
+                    caixas.forEach(function (caixa) { caixa.checked = marcar; });
+                    atualizarResumo();
+                });
+            });
+
+            atualizarResumo();
+
+            var mensagem = document.getElementById('mensagemSucesso');
+            if (mensagem) {
+                setTimeout(function () {
+                    mensagem.style.transition = 'opacity 0.5s';
+                    mensagem.style.opacity = '0';
+                    setTimeout(function () { mensagem.remove(); }, 500);
+                }, 4000);
+            }
+        })();
+    </script>
+</body>
+</html>

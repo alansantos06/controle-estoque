@@ -89,12 +89,16 @@
                 </form>
 
                 <div class="acoes-produtos">
-                    <a href="/produtos/novo" class="botao-link">
-                        + Novo produto
-                    </a>
-                    <a href="/movimentacoes/nova" class="botao-link botao-secundario">
-                        Nova movimentação
-                    </a>
+                    <% if (permissoes.cadastrarProdutos) { %>
+                        <a href="/produtos/novo" class="botao-link">
+                            + Novo produto
+                        </a>
+                    <% } %>
+                    <% if (permissoes.movimentarEstoque) { %>
+                        <a href="/movimentacoes/nova" class="botao-link botao-secundario">
+                            Nova movimentação
+                        </a>
+                    <% } %>
                 </div>
 
                 <% if (produtos.length === 0) { %>
@@ -113,7 +117,7 @@
                                     <th>Estoque atual</th>
                                     <th>Estoque mínimo</th>
                                     <th>Estoque máximo</th>
-                                    <th>Ações</th>
+                                    <% if (permissoes.cadastrarProdutos) { %><th>Ações</th><% } %>
                                 </tr>
                             </thead>
 
@@ -139,6 +143,7 @@
                                         <td><%= produto.estoque_minimo %></td>
                                         <td><%= produto.estoque_maximo %></td>
 
+                                        <% if (permissoes.cadastrarProdutos) { %>
                                         <td>
                                             <div class="acoes-tabela">
                                                 <a
@@ -169,6 +174,7 @@
                                                 </form>
                                             </div>
                                         </td>
+                                        <% } %>
                                     </tr>
                                 <% }) %>
                             </tbody>

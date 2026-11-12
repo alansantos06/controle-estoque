@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,108 +19,79 @@
                 tituloPagina: 'Permissões de usuários'
             }) %>
 
-            <section class="panel-card">
+            <section class="welcome-panel">
                 <div>
+                    <p class="welcome-label">ADMINISTRAÇÃO</p>
                     <h2>Gerenciar acessos</h2>
-                    <p>Controle quais usuários podem realizar movimentações no estoque.</p>
-                </div>
-
-                <% if (mensagem === 'concedida') { %>
-                    <p class="mensagem-sucesso">
-                        Permissão concedida com sucesso!
-                    </p>
-                <% } else if (mensagem === 'retirada') { %>
-                    <p class="mensagem-sucesso">
-                        Permissão retirada com sucesso!
-                    </p>
-                <% } %>
-
-                <div class="table-wrapper">
-                    <% if (usuarios.length === 0) { %>
-                        <p>Nenhum usuário encontrado.</p>
-                    <% } else { %>
-
-                        <table class="dashboard-table">
-                            <thead>
-                                <tr>
-                                    <th>E-mail do usuário</th>
-                                    <th>Permissão de acesso</th>
-                                    <th>Ação</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                <% usuarios.forEach(usuario => { %>
-                                    <tr>
-                                        <td>
-                                            <strong><%= usuario.email %></strong>
-                                        </td>
-
-                                        <td>
-                                            <% if (usuario.ehAdministrador) { %>
-                                                <span class="status-badge status-success">
-                                                    Administrador
-                                                </span>
-                                            <% } else if (usuario.podeMovimentar) { %>
-                                                <span class="status-badge status-success">
-                                                    Autorizado
-                                                </span>
-                                            <% } else { %>
-                                                <span class="status-badge status-warning">
-                                                    Sem permissão
-                                                </span>
-                                            <% } %>
-                                        </td>
-
-                                        <td>
-                                            <% if (usuario.ehAdministrador) { %>
-                                                <span>Acesso permanente</span>
-                                            <% } else { %>
-                                                <form
-                                                    action="/admin/permissoes/<%= usuario.id %>"
-                                                    method="POST"
-                                                >
-                                                    <input
-                                                        type="hidden"
-                                                        name="_csrf"
-                                                        value="<%= csrfToken %>"
-                                                    >
-
-                                                    <% if (usuario.podeMovimentar) { %>
-                                                        <input
-                                                            type="hidden"
-                                                            name="acao"
-                                                            value="retirar"
-                                                        >
-
-                                                        <button
-                                                            type="submit"
-                                                            class="logout-button"
-                                                        >
-                                                            Retirar permissão
-                                                        </button>
-                                                    <% } else { %>
-                                                        <input
-                                                            type="hidden"
-                                                            name="acao"
-                                                            value="conceder"
-                                                        >
-
-                                                        <button type="submit">
-                                                            Conceder permissão
-                                                        </button>
-                                                    <% } %>
-                                                </form>
-                                            <% } %>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            </tbody>
-                        </table>
-
-                    <% } %>
+                    <p>Escolha um usuário para configurar o que ele pode fazer em cada área do sistema.</p>
                 </div>
             </section>
+
+            <% if (mensagem) { %>
+                <div class="mensagem-sucesso" role="status"><%= mensagem %></div>
+            <% } %>
+
+            <% if (erro) { %>
+                <div class="mensagem-erro" role="alert"><%= erro %></div>
+            <% } %>
+
+            <section class="panel-card">
+                <div class="panel-header">
+                    <div>
+                        <h2>Usuários</h2>
+                        <p>Clique em "Configurar" para marcar as permissões de cada usuário.</p>
+                    </div>
+                    <span class="codigo-produto">Total: <%= usuarios.length %></span>
+                </div>
+
+                <% if (usuarios.length === 0) { %>
+                    <div class="empty-state">
+                        <span>!</span>
+                        <p>Nenhum usuário encontrado.</p>
+                    </div>
+                <% } else { %>
+                    <ul class="perm-lista-usuarios">
+                        <% usuarios.forEach(usuario => { %>
+                            <li>
+                                <div class="perm-avatar" aria-hidden="true">
+                                    <%= usuario.email.charAt(0).toUpperCase() %>
+                                </div>
+
+                                <div class="perm-usuario-info">
+                                    <strong>
+                                        <%= usuario.email %>
+                                        <% if (usuario.ehVoceMesmo) { %><span class="perm-tag">Você</span><% } %>
+                                    </strong>
+
+                                    <div class="perm-chips">
+                                        <% if (usuario.ehAdministrador) { %>
+                                            <span class="perm-chip perm-chip-admin">Administrador · acesso total</span>
+                                        <% } else if (usuario.gruposLiberados.length === 0) { %>
+                                            <span class="perm-chip perm-chip-vazio">Sem permissões</span>
+                                        <% } else { %>
+                                            <% usuario.gruposLiberados.forEach(grupo => { %>
+                                                <span class="perm-chip"><%= grupo %></span>
+                                            <% }) %>
+                                        <% } %>
+                                    </div>
+                                </div>
+
+                                <span class="perm-contador">
+                                    <%= usuario.totalMarcadas %>/<%= totalPermissoes %>
+                                </span>
+
+                                <a href="/admin/permissoes/<%= usuario.id %>" class="compra-botao-topo">
+                                    <%= usuario.ehAdministrador || usuario.ehVoceMesmo ? 'Ver' : 'Configurar' %> →
+                                </a>
+                            </li>
+                        <% }) %>
+                    </ul>
+                <% } %>
+            </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
 
         </main>
     </div>
