@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%
+        // Parâmetros:
+        //   modulo { base, paginaAtiva, rotulo, singular, plural, parametro, efeitoAprovar }
+        //   acao   'aprovar' | 'rejeitar'
+        //   item   null | { id, codigo, resumo: [{ rotulo, valor, lista, alerta }] }
+        //   itens  lista para escolher (partials/escolha-pendente)
+        //   erro
+        const aprovando = acao === 'aprovar';
+        const verbo = aprovando ? 'Aprovar' : 'Rejeitar';
+        const titulo = verbo + ' ' + modulo.singular;
+    %>
+    <title><%= titulo %> | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dashboard-page">
+    <div class="app-layout">
+
+        <%- include('partials/sidebar', { paginaAtiva: modulo.paginaAtiva }) %>
+
+        <main class="dashboard-main">
+
+            <%- include('partials/header', {
+                paginaAtiva: modulo.paginaAtiva,
+                tituloPagina: titulo
+            }) %>
+
+            <section class="welcome-panel">
+                <div class="perm-cabecalho">
+                    <span class="decisao-icone decisao-icone-<%= acao %>" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <% if (aprovando) { %>
+                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/>
+                                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                            <% } else { %>
+                                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/>
+                                <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+                            <% } %>
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="welcome-label"><%= modulo.rotulo %></p>
+                        <h2>
+                            <%= titulo %>
+                            <% if (item) { %><span class="compra-codigo">#<%= item.codigo %></span><% } %>
+                        </h2>
+                        <p>
+                            <% if (!item) { %>
+                                Selecione abaixo a <%= modulo.singular %> que deseja <%= acao %>.
+                            <% } else if (aprovando) { %>
+                                Confira os dados antes de aprovar. <%= modulo.efeitoAprovar %>
+                            <% } else { %>
+                                Informe o motivo da rejeição. Ele ficará registrado no histórico.
+                            <% } %>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="compra-acoes-topo">
+                    <% if (item) { %>
+                        <a href="<%= modulo.base %>/<%= acao %>" class="compra-botao-topo">← Outra <%= modulo.singular %></a>
+                    <% } %>
+                    <a href="<%= modulo.base %>" class="compra-botao-topo">← Voltar às <%= modulo.plural %></a>
+                </div>
+            </section>
+
+            <% if (erro) { %>
+                <div class="mensagem-erro" role="alert"><%= erro %></div>
+            <% } %>
+
+            <% if (!item) { %>
+
+                <%- include('partials/escolha-pendente', {
+                    itens,
+                    hrefBase: modulo.base + '/' + acao + '?' + modulo.parametro + '=',
+                    rotulo: aprovando ? '👍 Aprovar' : '👎 Rejeitar',
+                    perigo: !aprovando,
+                    nome: modulo.plural
+                }) %>
+
+            <% } else { %>
+
+                <section class="panel-card requisicoes-card">
+                    <dl class="compra-resumo">
+                        <% item.resumo.forEach(campo => { %>
+                            <div>
+                                <dt><%= campo.rotulo %></dt>
+                                <dd class="<%= campo.alerta ? 'decisao-alerta' : '' %>">
+                                    <% if (campo.lista) { %>
+                                        <ul class="compra-lista-produtos">
+                                            <% campo.lista.forEach(linha => { %>
+                                                <li>
+                                                    <span><%= linha.nome %></span>
+                                                    <strong><%= linha.quantidade %></strong>
+                                                </li>
+                                            <% }) %>
+                                        </ul>
+                                    <% } else { %>
+                                        <%= campo.valor %>
+                                    <% } %>
+                                    <% if (campo.alerta) { %><small><%= campo.alerta %></small><% } %>
+                                </dd>
+                            </div>
+                        <% }) %>
+                    </dl>
+
+                    <form
+                        action="<%= modulo.base %>/<%= item.id %>/<%= acao %>"
+                        method="POST"
+                        class="formulario-requisicao"
+                    >
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                        <% if (!aprovando) { %>
+                            <div class="campo-formulario">
+                                <label for="motivo_rejeicao">Motivo da rejeição</label>
+                                <textarea
+                                    name="motivo_rejeicao"
+                                    id="motivo_rejeicao"
+                                    rows="3"
+                                    maxlength="1000"
+                                    placeholder="Ex.: sem orçamento no momento, quantidade acima do necessário..."
+                                    required
+                                ></textarea>
+                            </div>
+                        <% } %>
+
+                        <div class="acoes-formulario compra-acoes-form">
+                            <a href="<%= modulo.base %>" class="compra-botao-secundario">Cancelar</a>
+                            <button type="submit" class="<%= aprovando ? 'decisao-botao-aprovar' : 'compra-botao-excluir' %>">
+                                <%= aprovando ? '👍 Aprovar' : '👎 Rejeitar' %> <%= modulo.singular %>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+            <% } %>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

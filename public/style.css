@@ -2910,3 +2910,118 @@ html[data-theme="light"] .filtros-relatorio input[type="date"],
     align-items: center;
     text-decoration: none;
 }
+
+
+
+
+/* ===== APROVAR / REJEITAR (joinhas) ===== */
+
+.dashboard-page .botao-joinha {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 40px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.dashboard-page .botao-joinha:hover {
+    transform: translateY(-1px);
+}
+
+.dashboard-page .botao-joinha-aprovar {
+    border-color: #86efac;
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dashboard-page .botao-joinha-aprovar:hover {
+    background: #bbf7d0;
+}
+
+.dashboard-page .botao-joinha-rejeitar {
+    border-color: #fca5a5;
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.dashboard-page .botao-joinha-rejeitar:hover {
+    background: #fecaca;
+}
+
+:root[data-theme="dark"] .dashboard-page .botao-joinha-aprovar {
+    border-color: #166534;
+    background: #14532d;
+    color: #4ade80;
+}
+
+:root[data-theme="dark"] .dashboard-page .botao-joinha-rejeitar {
+    border-color: #7f1d1d;
+    background: #3b1d1d;
+    color: #f87171;
+}
+
+/* Ícone grande no topo da tela de decisão */
+.decisao-icone {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+}
+
+.decisao-icone-aprovar {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.decisao-icone-rejeitar {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+:root[data-theme="dark"] .decisao-icone-aprovar {
+    background: #14532d;
+    color: #4ade80;
+}
+
+:root[data-theme="dark"] .decisao-icone-rejeitar {
+    background: #3b1d1d;
+    color: #f87171;
+}
+
+.dashboard-page .decisao-botao-aprovar {
+    padding: 12px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.dashboard-page .decisao-botao-aprovar:hover {
+    background: #15803d;
+}
+
+.compra-resumo dd.decisao-alerta {
+    color: #b91c1c;
+    font-weight: bold;
+}
+
+.compra-resumo dd.decisao-alerta small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+:root[data-theme="dark"] .compra-resumo dd.decisao-alerta {
+    color: #f87171;
+}

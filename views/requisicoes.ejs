@@ -38,6 +38,9 @@
                     <a href="/requisicoes/excluir" class="compra-botao-topo compra-botao-topo-perigo">
                         🗑 Excluir
                     </a>
+                    <% if (permissoes.aprovarRequisicao) { %>
+                        <%- include('partials/botoes-decisao', { base: '/requisicoes' }) %>
+                    <% } %>
                 </div>
             </section>
 
@@ -82,7 +85,7 @@
                                     <th>Data</th>
                                     <th>Status</th>
                                     <th>Observação</th>
-                                    <% if (permissoes.aprovarRequisicao) { %><th>Ações</th><% } %>
+                                    <th>Decisão</th>
                                 </tr>
                             </thead>
 
@@ -114,48 +117,28 @@
 
                                         <td><%= requisicao.observacao || '-' %></td>
 
-                                        <% if (permissoes.aprovarRequisicao) { %>
                                         <td>
                                             <% if (requisicao.status === 'Pendente') { %>
-                                                <div class="acoes-requisicao">
-
-                                                    <form
-                                                        action="/requisicoes/<%= requisicao.id %>/aprovar"
-                                                        method="POST"
-                                                    >
-                                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-                                                        <button type="submit" class="botao-aprovar">
-                                                            Aprovar
-                                                        </button>
-                                                    </form>
-
-                                                    <form
-                                                        action="/requisicoes/<%= requisicao.id %>/rejeitar"
-                                                        method="POST"
-                                                        class="form-rejeitar"
-                                                    >
-                                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-                                                        <input
-                                                            type="text"
-                                                            name="motivo_rejeicao"
-                                                            placeholder="Motivo da rejeição"
-                                                            aria-label="Motivo da rejeição"
-                                                            required
-                                                        >
-
-                                                        <button type="submit" class="btn-danger">
-                                                            Rejeitar
-                                                        </button>
-                                                    </form>
-
-                                                </div>
+                                                <span class="compra-vazio">Aguardando decisão</span>
                                             <% } else { %>
-                                                <span>Decidida</span>
+                                                <div class="compra-pessoa">
+                                                    <span><%= requisicao.status === 'Rejeitada' ? 'Rejeitada por' : 'Aprovada por' %></span>
+                                                    <strong><%= requisicao.responsavel_decisao || '—' %></strong>
+                                                    <% if (requisicao.data_decisao) { %>
+                                                        <small>
+                                                            <%= new Date(requisicao.data_decisao).toLocaleString('pt-BR', {
+                                                                timeZone: 'America/Sao_Paulo',
+                                                                dateStyle: 'short',
+                                                                timeStyle: 'short'
+                                                            }) %>
+                                                        </small>
+                                                    <% } %>
+                                                    <% if (requisicao.motivo_rejeicao) { %>
+                                                        <small class="compra-motivo-rejeicao">Motivo: <%= requisicao.motivo_rejeicao %></small>
+                                                    <% } %>
+                                                </div>
                                             <% } %>
                                         </td>
-                                        <% } %>
                                     </tr>
                                 <% }) %>
                             </tbody>

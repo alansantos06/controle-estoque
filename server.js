@@ -1202,6 +1202,81 @@ app.post('/requisicoes/:id/excluir', exigirPermissao('criarRequisicao', 'aprovar
 });
 
 
+function formatarDataBrasil(valor) {
+    return valor
+        ? new Date(valor).toLocaleString('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            dateStyle: 'short',
+            timeStyle: 'short'
+        })
+        : '—';
+}
+
+const MODULO_REQUISICOES = {
+    base: '/requisicoes',
+    paginaAtiva: 'requisicoes',
+    rotulo: 'REQUISIÇÕES',
+    singular: 'requisição',
+    plural: 'requisições',
+    parametro: 'id',
+    efeitoAprovar: 'Ao aprovar, a quantidade é descontada do estoque.'
+};
+
+// Telas: aprovar (joinha verde) e rejeitar (joinha vermelho) requisição.
+// Sem id, mostram a lista de pendentes para escolher.
+['aprovar', 'rejeitar'].forEach(acao => {
+    app.get(`/requisicoes/${acao}`, exigirPermissao('aprovarRequisicao'), async (req, res) => {
+        try {
+            const id = lerIdRequisicao(req);
+            let item = null;
+            let erro = req.query.erro || '';
+
+            if (id) {
+                const requisicao = await buscarRequisicao(id);
+
+                if (!requisicao) {
+                    erro = 'Requisição não encontrada.';
+                } else if (requisicao.status !== 'Pendente') {
+                    erro = 'Esta requisição já foi decidida.';
+                } else {
+                    const estoque = requisicao.produtos ? requisicao.produtos.quantidade : 0;
+
+                    item = {
+                        id: requisicao.id,
+                        codigo: formatarCodigoRequisicao(requisicao.id),
+                        resumo: [
+                            { rotulo: 'Produto', valor: requisicao.produtos ? requisicao.produtos.nome : 'Produto não encontrado' },
+                            { rotulo: 'Quantidade solicitada', valor: requisicao.quantidade },
+                            {
+                                rotulo: 'Estoque atual',
+                                valor: estoque,
+                                alerta: acao === 'aprovar' && requisicao.quantidade > estoque
+                                    ? 'Estoque insuficiente para aprovar esta requisição.'
+                                    : ''
+                            },
+                            { rotulo: 'Solicitante', valor: requisicao.solicitante },
+                            { rotulo: 'Data', valor: formatarDataBrasil(requisicao.data_solicitacao) },
+                            { rotulo: 'Observação', valor: requisicao.observacao || '—' }
+                        ]
+                    };
+                }
+            }
+
+            return res.render('decisao', {
+                modulo: MODULO_REQUISICOES,
+                acao,
+                item,
+                itens: item ? [] : await listarRequisicoesGerenciaveis(req),
+                erro
+            });
+        } catch (erro) {
+            console.error(`Erro ao abrir tela de ${acao} requisição:`, erro);
+            return redirecionarRequisicoes(res, 'erro', 'Não foi possível abrir a tela de decisão.');
+        }
+    });
+});
+
+
 /* Aprovar uma requisição e descontar o estoque */
 app.post(
     '/requisicoes/:id/aprovar',
@@ -2139,6 +2214,67 @@ app.post('/compras/:codigo/excluir', exigirPermissao('criarSolicitacaoCompra', '
         console.error('Erro ao excluir solicitação de compra:', erro);
         return redirecionarAcaoCompra(res, 'excluir', 'Não foi possível excluir a solicitação.', codigo);
     }
+});
+
+
+const MODULO_COMPRAS = {
+    base: '/compras',
+    paginaAtiva: 'compras',
+    rotulo: 'SOLICITAÇÕES DE COMPRA',
+    singular: 'solicitação',
+    plural: 'solicitações',
+    parametro: 'codigo',
+    efeitoAprovar: 'Ao aprovar, o status passa para Comprada.'
+};
+
+// Telas: aprovar (joinha verde) e rejeitar (joinha vermelho) solicitação.
+// Sem código, mostram a lista de pendentes para escolher.
+['aprovar', 'rejeitar'].forEach(acao => {
+    app.get(`/compras/${acao}`, exigirPermissao('aprovarSolicitacaoCompra'), async (req, res) => {
+        try {
+            const codigo = lerCodigoSolicitacao(req);
+            let item = null;
+            let erro = req.query.erro || '';
+
+            if (codigo) {
+                const solicitacao = await buscarSolicitacaoCompra(codigo);
+
+                if (!solicitacao) {
+                    erro = 'Solicitação não encontrada.';
+                } else if (solicitacao.status !== 'Pendente') {
+                    erro = 'Esta solicitação já foi decidida.';
+                } else {
+                    item = {
+                        id: solicitacao.codigo,
+                        codigo: formatarCodigoCompra(solicitacao.codigo),
+                        resumo: [
+                            { rotulo: 'Solicitante', valor: solicitacao.solicitante_email },
+                            { rotulo: 'Data', valor: formatarDataBrasil(solicitacao.data_solicitacao) },
+                            { rotulo: 'Motivo', valor: solicitacao.motivo },
+                            {
+                                rotulo: 'Produtos',
+                                lista: (solicitacao.solicitacoes_compra_itens || []).map(linha => ({
+                                    nome: linha.produtos ? linha.produtos.nome : 'Produto removido',
+                                    quantidade: linha.quantidade
+                                }))
+                            }
+                        ]
+                    };
+                }
+            }
+
+            return res.render('decisao', {
+                modulo: MODULO_COMPRAS,
+                acao,
+                item,
+                itens: item ? [] : await listarSolicitacoesGerenciaveis(req, true),
+                erro
+            });
+        } catch (erro) {
+            console.error(`Erro ao abrir tela de ${acao} solicitação de compra:`, erro);
+            return redirecionarCompras(res, 'erro', 'Não foi possível abrir a tela de decisão.');
+        }
+    });
 });
 
 

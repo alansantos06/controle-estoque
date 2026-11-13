@@ -51,6 +51,9 @@
                     <a href="/compras/excluir" class="compra-botao-topo compra-botao-topo-perigo">
                         🗑 Excluir
                     </a>
+                    <% if (podeAprovar) { %>
+                        <%- include('partials/botoes-decisao', { base: '/compras' }) %>
+                    <% } %>
                 </div>
             </section>
 
@@ -206,25 +209,7 @@
                                         <% if (podeAprovar) { %>
                                             <td>
                                                 <% if (solicitacao.status === 'Pendente') { %>
-                                                    <div class="acoes-requisicao">
-                                                        <form action="/compras/<%= solicitacao.codigo %>/aprovar" method="POST">
-                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                            <button type="submit" class="botao-aprovar">Aprovar</button>
-                                                        </form>
-
-                                                        <form action="/compras/<%= solicitacao.codigo %>/rejeitar" method="POST" class="form-rejeitar">
-                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                            <input
-                                                                type="text"
-                                                                name="motivo_rejeicao"
-                                                                placeholder="Motivo da rejeição"
-                                                                aria-label="Motivo da rejeição"
-                                                                maxlength="1000"
-                                                                required
-                                                            >
-                                                            <button type="submit" class="compra-botao-rejeitar">Rejeitar</button>
-                                                        </form>
-                                                    </div>
+                                                    <span class="compra-vazio">Aguardando decisão</span>
                                                 <% } else if (solicitacao.status === 'Comprada') { %>
                                                     <div class="acoes-requisicao">
                                                         <form
