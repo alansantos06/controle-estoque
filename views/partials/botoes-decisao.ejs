@@ -2,13 +2,13 @@
     // Botões de aprovar (joinha verde) e rejeitar (joinha vermelho).
     // Parâmetro: base ('/requisicoes' ou '/compras')
 %>
-<a href="<%= base %>/aprovar" class="botao-joinha botao-joinha-aprovar" title="Aprovar" aria-label="Aprovar">
+<a href="<%= base %>/aprovar" class="botao-joinha botao-joinha-aprovar" data-decisao="aprovar" title="Aprovar a selecionada" aria-label="Aprovar a selecionada">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/>
         <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
     </svg>
 </a>
-<a href="<%= base %>/rejeitar" class="botao-joinha botao-joinha-rejeitar" title="Rejeitar" aria-label="Rejeitar">
+<a href="<%= base %>/rejeitar" class="botao-joinha botao-joinha-rejeitar" data-decisao="rejeitar" title="Rejeitar a selecionada" aria-label="Rejeitar a selecionada">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/>
         <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>

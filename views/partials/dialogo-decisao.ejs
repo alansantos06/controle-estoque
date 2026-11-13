@@ -1,0 +1,44 @@
+<%
+    // Janela de confirmação para aprovar/rejeitar o item selecionado na tabela.
+    // Parâmetros: base ('/requisicoes' | '/compras'), singular ('requisição' | 'solicitação'),
+    //             efeitoAprovar (texto curto do que acontece ao aprovar)
+%>
+<dialog class="dialogo-decisao" id="dialogoDecisao" data-base="<%= base %>" aria-labelledby="dialogoTitulo">
+    <form method="POST" id="dialogoForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="dialogo-cabecalho">
+            <span class="decisao-icone" id="dialogoIcone" aria-hidden="true"></span>
+            <div>
+                <h2 id="dialogoTitulo"></h2>
+                <p id="dialogoResumo"></p>
+            </div>
+        </div>
+
+        <p class="dialogo-texto" id="dialogoTextoAprovar">
+            <%= efeitoAprovar %>
+        </p>
+
+        <p class="dialogo-alerta" id="dialogoAlerta" hidden></p>
+
+        <div class="campo-formulario" id="dialogoCampoMotivo">
+            <label for="dialogoMotivo">Motivo da rejeição</label>
+            <textarea
+                name="motivo_rejeicao"
+                id="dialogoMotivo"
+                rows="3"
+                maxlength="1000"
+                placeholder="Ex.: sem orçamento no momento, quantidade acima do necessário..."
+            ></textarea>
+        </div>
+
+        <div class="compra-acoes-form">
+            <button type="button" class="compra-botao-secundario" id="dialogoCancelar">Cancelar</button>
+            <button type="submit" id="dialogoConfirmar"></button>
+        </div>
+    </form>
+</dialog>
+
+<div class="aviso-selecao" id="avisoSelecao" role="status" hidden>
+    Selecione <%= singular === 'requisição' ? 'uma requisição pendente' : 'uma solicitação pendente' %> na lista primeiro.
+</div>

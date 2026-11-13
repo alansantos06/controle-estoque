@@ -32,10 +32,10 @@
                             ＋ Nova requisição
                         </a>
                     <% } %>
-                    <a href="/requisicoes/editar" class="compra-botao-topo">
+                    <a href="/requisicoes/editar" class="compra-botao-topo" data-selecao-href="/requisicoes/editar?id=">
                         ✎ Editar
                     </a>
-                    <a href="/requisicoes/excluir" class="compra-botao-topo compra-botao-topo-perigo">
+                    <a href="/requisicoes/excluir" class="compra-botao-topo compra-botao-topo-perigo" data-selecao-href="/requisicoes/excluir?id=">
                         🗑 Excluir
                     </a>
                     <% if (permissoes.aprovarRequisicao) { %>
@@ -74,8 +74,13 @@
                     </div>
                 <% } else { %>
 
+                    <p class="dica-selecao">
+                        <span aria-hidden="true">👆</span>
+                        Clique em uma requisição pendente para selecioná-la e depois use os botões do topo.
+                    </p>
+
                     <div class="table-wrapper tabela-requisicoes">
-                        <table class="dashboard-table">
+                        <table class="dashboard-table tabela-selecionavel">
                             <thead>
                                 <tr>
                                     <th>Código</th>
@@ -90,8 +95,21 @@
                             </thead>
 
                             <tbody>
-                                <% requisicoes.forEach(requisicao => { %>
-                                    <tr>
+                                <% requisicoes.forEach(requisicao => {
+                                    const pendente = requisicao.status === 'Pendente';
+                                    const estoqueAtual = requisicao.produtos ? requisicao.produtos.quantidade : 0;
+                                %>
+                                    <tr
+                                        <% if (pendente) { %>
+                                            class="linha-selecionavel"
+                                            tabindex="0"
+                                            aria-selected="false"
+                                            data-id="<%= requisicao.id %>"
+                                            data-codigo="<%= String(requisicao.id).padStart(5, '0') %>"
+                                            data-resumo="<%= (requisicao.produtos ? requisicao.produtos.nome : 'Produto não encontrado') + ' — ' + requisicao.quantidade + ' un. · ' + requisicao.solicitante %>"
+                                            data-alerta="<%= requisicao.quantidade > estoqueAtual ? 'Estoque insuficiente: há ' + estoqueAtual + ' em estoque.' : '' %>"
+                                        <% } %>
+                                    >
                                         <td><strong class="compra-codigo">#<%= String(requisicao.id).padStart(5, '0') %></strong></td>
 
                                         <td>
@@ -155,7 +173,16 @@
         </main>
     </div>
 
+    <% if (permissoes.aprovarRequisicao) { %>
+        <%- include('partials/dialogo-decisao', {
+            base: '/requisicoes',
+            singular: 'requisição',
+            efeitoAprovar: 'Ao aprovar, a quantidade é descontada do estoque.'
+        }) %>
+    <% } %>
+
     <script src="/script.js"></script>
+    <script src="/selecao-lista.js"></script>
 
     <script>
         (function () {

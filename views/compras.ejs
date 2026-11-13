@@ -45,10 +45,10 @@
                             ＋ Nova solicitação
                         </a>
                     <% } %>
-                    <a href="/compras/editar" class="compra-botao-topo">
+                    <a href="/compras/editar" class="compra-botao-topo" data-selecao-href="/compras/editar?codigo=">
                         ✎ Editar
                     </a>
-                    <a href="/compras/excluir" class="compra-botao-topo compra-botao-topo-perigo">
+                    <a href="/compras/excluir" class="compra-botao-topo compra-botao-topo-perigo" data-selecao-href="/compras/excluir?codigo=">
                         🗑 Excluir
                     </a>
                     <% if (podeAprovar) { %>
@@ -135,8 +135,13 @@
                         </p>
                     </div>
                 <% } else { %>
+                    <p class="dica-selecao">
+                        <span aria-hidden="true">👆</span>
+                        Clique em uma solicitação pendente para selecioná-la e depois use os botões do topo.
+                    </p>
+
                     <div class="table-wrapper tabela-requisicoes">
-                        <table class="dashboard-table compra-tabela">
+                        <table class="dashboard-table compra-tabela tabela-selecionavel">
                             <thead>
                                 <tr>
                                     <th>Código</th>
@@ -152,8 +157,20 @@
                             </thead>
 
                             <tbody>
-                                <% solicitacoes.forEach(solicitacao => { %>
-                                    <tr>
+                                <% solicitacoes.forEach(solicitacao => {
+                                    const pendente = solicitacao.status === 'Pendente';
+                                    const qtdProdutos = (solicitacao.solicitacoes_compra_itens || []).length;
+                                %>
+                                    <tr
+                                        <% if (pendente) { %>
+                                            class="linha-selecionavel"
+                                            tabindex="0"
+                                            aria-selected="false"
+                                            data-id="<%= solicitacao.codigo %>"
+                                            data-codigo="<%= String(solicitacao.codigo).padStart(5, '0') %>"
+                                            data-resumo="<%= solicitacao.solicitante_email + ' · ' + qtdProdutos + (qtdProdutos === 1 ? ' produto' : ' produtos') + ' · ' + solicitacao.motivo %>"
+                                        <% } %>
+                                    >
                                         <td><strong class="compra-codigo"><%= formatarCodigo(solicitacao.codigo) %></strong></td>
 
                                         <td class="compra-nowrap"><%= formatarData(solicitacao.data_solicitacao) %></td>
@@ -241,7 +258,16 @@
         </main>
     </div>
 
+    <% if (podeAprovar) { %>
+        <%- include('partials/dialogo-decisao', {
+            base: '/compras',
+            singular: 'solicitação',
+            efeitoAprovar: 'Ao aprovar, o status passa para Comprada.'
+        }) %>
+    <% } %>
+
     <script src="/script.js"></script>
+    <script src="/selecao-lista.js"></script>
 
     <script>
         (function () {

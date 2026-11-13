@@ -3025,3 +3025,154 @@ html[data-theme="light"] .filtros-relatorio input[type="date"],
 :root[data-theme="dark"] .compra-resumo dd.decisao-alerta {
     color: #f87171;
 }
+
+
+
+
+/* ===== SELEÇÃO DE LINHA + JANELA DE DECISÃO ===== */
+
+.dica-selecao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.tabela-selecionavel tr.linha-selecionavel {
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.tabela-selecionavel tr.linha-selecionavel:hover td {
+    background: var(--surface-soft);
+}
+
+.tabela-selecionavel tr.linha-selecionavel:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: -2px;
+}
+
+.tabela-selecionavel tr.linha-selecionada td,
+.tabela-selecionavel tr.linha-selecionada:hover td {
+    background: var(--green-soft);
+}
+
+.tabela-selecionavel tr.linha-selecionada td:first-child {
+    box-shadow: inset 4px 0 0 var(--green);
+}
+
+/* Joinhas ficam "apagados" até selecionar uma linha */
+body:not(.tem-selecao) .botao-joinha {
+    opacity: 0.55;
+}
+
+body.tem-selecao .botao-joinha {
+    opacity: 1;
+}
+
+.aviso-selecao {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: calc(100vw - 40px);
+    padding: 12px 16px;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] .aviso-selecao {
+    border-color: #78350f;
+    background: #3a2a10;
+    color: #fde68a;
+}
+
+.dialogo-decisao {
+    width: min(480px, calc(100vw - 32px));
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.dialogo-decisao::backdrop {
+    background: rgba(15, 23, 20, 0.5);
+}
+
+.dialogo-decisao form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px;
+}
+
+.dialogo-cabecalho {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.dialogo-cabecalho h2 {
+    margin: 0 0 4px;
+    color: var(--text);
+    font-size: 18px;
+}
+
+.dialogo-cabecalho p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.dialogo-texto {
+    margin: 0;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.dialogo-alerta {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+:root[data-theme="dark"] .dialogo-alerta {
+    background: #3b1d1d;
+    color: #fca5a5;
+}
+
+.dialogo-decisao textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: var(--text);
+    font: inherit;
+    resize: vertical;
+}
+
+.dialogo-decisao [hidden] {
+    display: none !important;
+}
+
+.dialogo-decisao button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
