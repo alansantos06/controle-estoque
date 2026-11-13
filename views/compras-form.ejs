@@ -68,7 +68,7 @@
 
             <% if (editando && !solicitacao) { %>
 
-                <%- include('partials/compras-escolha', { acao: 'editar', gerenciaveis, rotulo: '✎ Editar' }) %>
+                <%- include('partials/escolha-pendente', { itens: gerenciaveis, hrefBase: '/compras/editar?codigo=', rotulo: '✎ Editar', perigo: false, nome: 'solicitações' }) %>
 
             <% } else { %>
 

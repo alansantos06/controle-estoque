@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= modo === 'nova' ? 'Nova requisição' : 'Editar requisição' %> | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dashboard-page">
+    <%
+        const editando = modo === 'editar';
+        const codigoFormatado = requisicao ? '#' + String(requisicao.id).padStart(5, '0') : '';
+    %>
+
+    <div class="app-layout">
+
+        <%- include('partials/sidebar', { paginaAtiva: 'requisicoes' }) %>
+
+        <main class="dashboard-main">
+
+            <%- include('partials/header', {
+                paginaAtiva: 'requisicoes',
+                tituloPagina: editando ? 'Editar requisição' : 'Nova requisição'
+            }) %>
+
+            <section class="welcome-panel">
+                <div>
+                    <p class="welcome-label">REQUISIÇÕES</p>
+                    <h2>
+                        <% if (!editando) { %>
+                            Nova requisição de material
+                        <% } else if (requisicao) { %>
+                            Editar requisição <span class="compra-codigo"><%= codigoFormatado %></span>
+                        <% } else { %>
+                            Editar requisição de material
+                        <% } %>
+                    </h2>
+                    <p>
+                        <% if (!editando) { %>
+                            Preencha os dados para solicitar um material do estoque.
+                        <% } else if (requisicao) { %>
+                            Altere o produto, a quantidade, o solicitante ou a observação.
+                        <% } else { %>
+                            Selecione abaixo a requisição que deseja editar.
+                        <% } %>
+                    </p>
+                </div>
+
+                <div class="compra-acoes-topo">
+                    <% if (editando && requisicao) { %>
+                        <a href="/requisicoes/editar" class="compra-botao-topo">← Outra requisição</a>
+                    <% } %>
+                    <a href="/requisicoes" class="compra-botao-topo">← Voltar às requisições</a>
+                </div>
+            </section>
+
+            <% if (erro) { %>
+                <div class="mensagem-erro" role="alert"><%= erro %></div>
+            <% } %>
+
+            <% if (editando && !requisicao) { %>
+
+                <%- include('partials/escolha-pendente', { itens: gerenciaveis, hrefBase: '/requisicoes/editar?id=', rotulo: '✎ Editar', perigo: false, nome: 'requisições' }) %>
+
+            <% } else { %>
+
+                <section class="panel-card requisicoes-card">
+                    <% if (produtos.length === 0) { %>
+                        <div class="empty-state">
+                            <span>!</span>
+                            <p>Cadastre um produto antes de criar uma requisição.</p>
+                        </div>
+                    <% } else { %>
+                        <form
+                            action="<%= editando ? '/requisicoes/' + requisicao.id + '/editar' : '/requisicoes' %>"
+                            method="POST"
+                            class="formulario-requisicao"
+                        >
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                            <div class="campos-requisicao-grid">
+                                <div class="campo-formulario">
+                                    <label for="produto_id">Produto</label>
+                                    <select name="produto_id" id="produto_id" required>
+                                        <option value="">Selecione um produto</option>
+                                        <% produtos.forEach(produto => { %>
+                                            <option value="<%= produto.id %>" <%= requisicao && requisicao.produto_id === produto.id ? 'selected' : '' %>>
+                                                <%= produto.nome %> — Estoque: <%= produto.quantidade %>
+                                            </option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+
+                                <div class="campo-formulario">
+                                    <label for="quantidade">Quantidade solicitada</label>
+                                    <input
+                                        type="number"
+                                        name="quantidade"
+                                        id="quantidade"
+                                        min="1"
+                                        step="1"
+                                        value="<%= requisicao ? requisicao.quantidade : '' %>"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="campo-formulario">
+                                    <label for="solicitante">Nome do solicitante</label>
+                                    <input
+                                        type="text"
+                                        name="solicitante"
+                                        id="solicitante"
+                                        maxlength="150"
+                                        value="<%= requisicao ? requisicao.solicitante : '' %>"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="campo-formulario campo-observacao">
+                                    <label for="observacao">Observação (opcional)</label>
+                                    <textarea
+                                        name="observacao"
+                                        id="observacao"
+                                        rows="3"
+                                        maxlength="1000"
+                                    ><%= requisicao && requisicao.observacao ? requisicao.observacao : '' %></textarea>
+                                </div>
+                            </div>
+
+                            <div class="acoes-formulario compra-acoes-form">
+                                <a href="/requisicoes" class="compra-botao-secundario">Cancelar</a>
+                                <button type="submit" class="primary-link">
+                                    <%= editando ? 'Salvar alterações' : 'Enviar requisição' %>
+                                </button>
+                            </div>
+                        </form>
+                    <% } %>
+                </section>
+
+            <% } %>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

@@ -25,6 +25,20 @@
                     <h2>Requisições de materiais</h2>
                     <p>Solicite materiais e acompanhe as decisões das requisições.</p>
                 </div>
+
+                <div class="compra-acoes-topo">
+                    <% if (permissoes.criarRequisicao) { %>
+                        <a href="/requisicoes/nova" class="primary-link">
+                            ＋ Nova requisição
+                        </a>
+                    <% } %>
+                    <a href="/requisicoes/editar" class="compra-botao-topo">
+                        ✎ Editar
+                    </a>
+                    <a href="/requisicoes/excluir" class="compra-botao-topo compra-botao-topo-perigo">
+                        🗑 Excluir
+                    </a>
+                </div>
             </section>
 
             <% if (mensagem) { %>
@@ -37,74 +51,6 @@
                 <div class="mensagem-erro" id="mensagemErro" role="alert">
                     <%= erro %>
                 </div>
-            <% } %>
-
-            <% if (permissoes.criarRequisicao) { %>
-            <section class="panel-card requisicoes-card">
-                <div class="panel-header">
-                    <div>
-                        <h2>Nova requisição</h2>
-                        <p>Preencha os dados para solicitar um material.</p>
-                    </div>
-                </div>
-
-                <form action="/requisicoes" method="POST" class="formulario-requisicao">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-                    <div class="campos-requisicao-grid">
-                        <div class="campo-formulario">
-                            <label for="produto_id">Produto</label>
-                            <select name="produto_id" id="produto_id" required>
-                                <option value="">Selecione um produto</option>
-                                <% produtos.forEach(produto => { %>
-                                    <option value="<%= produto.id %>">
-                                        <%= produto.nome %> — Estoque: <%= produto.quantidade %>
-                                    </option>
-                                <% }) %>
-                            </select>
-                        </div>
-
-                        <div class="campo-formulario">
-                            <label for="quantidade">Quantidade solicitada</label>
-                            <input
-                                type="number"
-                                name="quantidade"
-                                id="quantidade"
-                                min="1"
-                                step="1"
-                                required
-                            >
-                        </div>
-
-                        <div class="campo-formulario">
-                            <label for="solicitante">Nome do solicitante</label>
-                            <input
-                                type="text"
-                                name="solicitante"
-                                id="solicitante"
-                                maxlength="150"
-                                required
-                            >
-                        </div>
-
-                        <div class="campo-formulario campo-observacao">
-                            <label for="observacao">Observação (opcional)</label>
-                            <textarea
-                                name="observacao"
-                                id="observacao"
-                                rows="3"
-                                maxlength="1000"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    <div class="acoes-formulario">
-                        <button type="submit" class="primary-link botao-salvar">
-                            Enviar requisição
-                        </button>
-                    </div>
-                </form>
-            </section>
             <% } %>
 
             <section class="panel-card requisicoes-card">
@@ -129,6 +75,7 @@
                         <table class="dashboard-table">
                             <thead>
                                 <tr>
+                                    <th>Código</th>
                                     <th>Produto</th>
                                     <th>Quantidade</th>
                                     <th>Solicitante</th>
@@ -142,6 +89,8 @@
                             <tbody>
                                 <% requisicoes.forEach(requisicao => { %>
                                     <tr>
+                                        <td><strong class="compra-codigo">#<%= String(requisicao.id).padStart(5, '0') %></strong></td>
+
                                         <td>
                                             <%= requisicao.produtos
                                                 ? requisicao.produtos.nome
@@ -226,6 +175,15 @@
     <script src="/script.js"></script>
 
     <script>
+        (function () {
+            var url = new URL(window.location.href);
+            if (url.searchParams.has('mensagem') || url.searchParams.has('erro')) {
+                url.searchParams.delete('mensagem');
+                url.searchParams.delete('erro');
+                history.replaceState(null, '', url.pathname + url.search);
+            }
+        })();
+
         ['mensagemSucesso', 'mensagemErro'].forEach(id => {
             const mensagem = document.getElementById(id);
 

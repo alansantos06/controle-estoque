@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excluir requisição | EstoquePro</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dashboard-page">
+    <%
+        const codigoFormatado = requisicao ? '#' + String(requisicao.id).padStart(5, '0') : '';
+    %>
+
+    <div class="app-layout">
+
+        <%- include('partials/sidebar', { paginaAtiva: 'requisicoes' }) %>
+
+        <main class="dashboard-main">
+
+            <%- include('partials/header', {
+                paginaAtiva: 'requisicoes',
+                tituloPagina: 'Excluir requisição'
+            }) %>
+
+            <section class="welcome-panel">
+                <div>
+                    <p class="welcome-label">REQUISIÇÕES</p>
+                    <h2>
+                        <% if (requisicao) { %>
+                            Excluir requisição <span class="compra-codigo"><%= codigoFormatado %></span>
+                        <% } else { %>
+                            Excluir requisição de material
+                        <% } %>
+                    </h2>
+                    <p>
+                        <%= requisicao
+                            ? 'Confira os dados antes de excluir. Esta ação não pode ser desfeita.'
+                            : 'Selecione abaixo a requisição que deseja excluir.' %>
+                    </p>
+                </div>
+
+                <div class="compra-acoes-topo">
+                    <% if (requisicao) { %>
+                        <a href="/requisicoes/excluir" class="compra-botao-topo">← Outra requisição</a>
+                    <% } %>
+                    <a href="/requisicoes" class="compra-botao-topo">← Voltar às requisições</a>
+                </div>
+            </section>
+
+            <% if (erro) { %>
+                <div class="mensagem-erro" role="alert"><%= erro %></div>
+            <% } %>
+
+            <% if (!requisicao) { %>
+
+                <%- include('partials/escolha-pendente', { itens: gerenciaveis, hrefBase: '/requisicoes/excluir?id=', rotulo: '🗑 Excluir', perigo: true, nome: 'requisições' }) %>
+
+            <% } else { %>
+
+                <section class="panel-card requisicoes-card">
+                    <dl class="compra-resumo">
+                        <div>
+                            <dt>Produto</dt>
+                            <dd><%= requisicao.produtos ? requisicao.produtos.nome : 'Produto não encontrado' %></dd>
+                        </div>
+                        <div>
+                            <dt>Quantidade</dt>
+                            <dd><%= requisicao.quantidade %></dd>
+                        </div>
+                        <div>
+                            <dt>Solicitante</dt>
+                            <dd><%= requisicao.solicitante %></dd>
+                        </div>
+                        <div>
+                            <dt>Data</dt>
+                            <dd>
+                                <%= new Date(requisicao.data_solicitacao).toLocaleString('pt-BR', {
+                                    timeZone: 'America/Sao_Paulo',
+                                    dateStyle: 'short',
+                                    timeStyle: 'short'
+                                }) %>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Observação</dt>
+                            <dd><%= requisicao.observacao || '—' %></dd>
+                        </div>
+                        <% if (requisicao.criado_por_email) { %>
+                            <div>
+                                <dt>Criada por</dt>
+                                <dd><%= requisicao.criado_por_email %></dd>
+                            </div>
+                        <% } %>
+                    </dl>
+
+                    <form
+                        action="/requisicoes/<%= requisicao.id %>/excluir"
+                        method="POST"
+                        class="acoes-formulario compra-acoes-form"
+                        onsubmit="return confirm('Excluir a requisição <%= codigoFormatado %>? Esta ação não pode ser desfeita.');"
+                    >
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <a href="/requisicoes" class="compra-botao-secundario">Cancelar</a>
+                        <button type="submit" class="compra-botao-excluir">
+                            Excluir requisição
+                        </button>
+                    </form>
+                </section>
+
+            <% } %>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

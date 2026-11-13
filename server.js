@@ -853,107 +853,351 @@ app.post('/produtos/:id/excluir', exigirPermissao('cadastrarProdutos'), async (r
 
 
 
+/* ========================================
+   REQUISIÇÕES
+======================================== */
+
+function redirecionarRequisicoes(res, tipo, texto) {
+    return res.redirect(`/requisicoes?${tipo}=${encodeURIComponent(texto)}`);
+}
+
+// Redireciona para uma das telas de ação (nova, editar, excluir) com erro
+function redirecionarAcaoRequisicao(res, acao, texto, id) {
+    const parametros = new URLSearchParams({ erro: texto });
+    if (id) parametros.set('id', id);
+    return res.redirect(`/requisicoes/${acao}?${parametros}`);
+}
+
+function lerIdRequisicao(req) {
+    const id = Number(req.params.id ?? req.query.id);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function formatarCodigoRequisicao(id) {
+    return String(id).padStart(5, '0');
+}
+
+async function buscarRequisicao(id) {
+    const { data, error } = await supabaseAdmin
+        .from('requisicoes')
+        .select('*, produtos ( id, nome, quantidade )')
+        .eq('id', id)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data;
+}
+
+// Só o autor ou quem pode aprovar mexe numa requisição pendente
+async function carregarRequisicaoGerenciavel(req, id, acao) {
+    const requisicao = await buscarRequisicao(id);
+
+    if (!requisicao) {
+        return { erro: 'Requisição não encontrada.' };
+    }
+
+    if (requisicao.status !== 'Pendente') {
+        return { erro: `Somente requisições pendentes podem ser ${acao}.` };
+    }
+
+    const ehAutor = requisicao.criado_por_id && requisicao.criado_por_id === req.session.usuario.id;
+
+    if (!req.permissoes.aprovarRequisicao && !ehAutor) {
+        return { erro: 'Você só pode alterar as suas próprias requisições.' };
+    }
+
+    return { requisicao };
+}
+
+// Requisições pendentes que o usuário pode editar ou excluir
+async function listarRequisicoesGerenciaveis(req) {
+    let consulta = supabaseAdmin
+        .from('requisicoes')
+        .select('id, quantidade, solicitante, observacao, data_solicitacao, produtos ( nome )')
+        .eq('status', 'Pendente')
+        .order('id', { ascending: false });
+
+    if (!req.permissoes.aprovarRequisicao) {
+        consulta = consulta.eq('criado_por_id', req.session.usuario.id);
+    }
+
+    const { data, error } = await consulta;
+    if (error) throw error;
+
+    // Formato da lista de escolha (partials/escolha-pendente)
+    return (data || []).map(item => ({
+        id: item.id,
+        codigo: formatarCodigoRequisicao(item.id),
+        titulo: `${item.produtos ? item.produtos.nome : 'Produto não encontrado'} — ${item.quantidade} un.`,
+        detalhe: item.solicitante,
+        data: item.data_solicitacao
+    }));
+}
+
+// Lê e valida os campos do formulário de requisição
+async function lerFormularioRequisicao(req) {
+    const produtoId = Number(req.body.produto_id);
+    const quantidade = Number(req.body.quantidade);
+    const solicitante = String(req.body.solicitante || '').trim();
+    const observacao = String(req.body.observacao || '').trim();
+
+    if (
+        !Number.isSafeInteger(produtoId) || produtoId <= 0 ||
+        !Number.isSafeInteger(quantidade) || quantidade <= 0 || quantidade > 1000000 ||
+        !solicitante || solicitante.length > 150 ||
+        observacao.length > 1000
+    ) {
+        return { erro: 'Preencha os campos corretamente.' };
+    }
+
+    const { data: produto, error } = await supabaseAdmin
+        .from('produtos')
+        .select('id')
+        .eq('id', produtoId)
+        .maybeSingle();
+
+    if (error) throw error;
+
+    if (!produto) {
+        return { erro: 'O produto selecionado não existe.' };
+    }
+
+    return {
+        dados: {
+            produto_id: produtoId,
+            quantidade,
+            solicitante,
+            observacao: observacao || null
+        }
+    };
+}
+
+
+// Tela de requisições (lista)
 app.get('/requisicoes', exigirPermissao('criarRequisicao', 'aprovarRequisicao'), async (req, res) => {
     try {
-        const { data: requisicoes, error: erroRequisicoes } = await supabase
+        const { data: requisicoes, error } = await supabaseAdmin
             .from('requisicoes')
-            .select(`
-                *,
-                produtos (
-                    id,
-                    nome,
-                    quantidade
-                )
-            `)
+            .select('*, produtos ( id, nome, quantidade )')
             .order('data_solicitacao', { ascending: false });
 
-        if (erroRequisicoes) {
-            throw erroRequisicoes;
-        }
+        if (error) throw error;
 
-        const { data: produtos, error: erroProdutos } = await supabase
-            .from('produtos')
-            .select('id, nome, quantidade')
-            .order('nome', { ascending: true });
-
-        if (erroProdutos) {
-            throw erroProdutos;
-        }
-
-        res.render('requisicoes', {
+        return res.render('requisicoes', {
             requisicoes: requisicoes || [],
-            produtos: produtos || [],
             mensagem: req.query.mensagem || '',
             erro: req.query.erro || ''
         });
     } catch (erro) {
         console.error('Erro ao carregar requisições:', erro);
-        res.status(500).send('Erro ao carregar as requisições.');
+        return res.status(500).send('Erro ao carregar as requisições.');
     }
 });
 
 
+// Tela: nova requisição
+app.get('/requisicoes/nova', exigirPermissao('criarRequisicao'), async (req, res) => {
+    try {
+        return res.render('requisicoes-form', {
+            modo: 'nova',
+            produtos: await listarProdutosFormulario(),
+            requisicao: null,
+            gerenciaveis: [],
+            erro: req.query.erro || ''
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir nova requisição:', erro);
+        return redirecionarRequisicoes(res, 'erro', 'Não foi possível abrir o formulário de requisição.');
+    }
+});
 
-/* Criar uma nova requisição */
+
+// Criar uma nova requisição
 app.post('/requisicoes', exigirPermissao('criarRequisicao'), async (req, res) => {
     try {
-        const produtoId = Number(req.body.produto_id);
-        const quantidade = Number(req.body.quantidade);
-        const solicitante = String(req.body.solicitante || '').trim();
-        const observacao = String(req.body.observacao || '').trim();
+        const formulario = await lerFormularioRequisicao(req);
 
-        if (
-            !Number.isSafeInteger(produtoId) ||
-            produtoId <= 0 ||
-            !Number.isSafeInteger(quantidade) ||
-            quantidade <= 0 ||
-            !solicitante ||
-            solicitante.length > 150 ||
-            observacao.length > 1000
-        ) {
-            return res.redirect(
-                '/requisicoes?erro=' +
-                encodeURIComponent('Preencha os campos corretamente.')
-            );
+        if (formulario.erro) {
+            return redirecionarAcaoRequisicao(res, 'nova', formulario.erro);
         }
 
-        const { data: produto, error: erroProduto } = await supabase
-            .from('produtos')
-            .select('id')
-            .eq('id', produtoId)
-            .maybeSingle();
-
-        if (erroProduto) throw erroProduto;
-
-        if (!produto) {
-            return res.redirect(
-                '/requisicoes?erro=' +
-                encodeURIComponent('O produto selecionado não existe.')
-            );
-        }
-
-        const { error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('requisicoes')
             .insert({
-                produto_id: produtoId,
-                quantidade,
-                solicitante,
-                observacao: observacao || null
-            });
+                ...formulario.dados,
+                criado_por_id: req.session.usuario.id,
+                criado_por_email: req.session.usuario.email
+            })
+            .select('id')
+            .single();
 
         if (error) throw error;
 
-        return res.redirect(
-            '/requisicoes?mensagem=' +
-            encodeURIComponent('Requisição enviada com sucesso!')
+        return redirecionarRequisicoes(
+            res,
+            'mensagem',
+            `Requisição nº ${formatarCodigoRequisicao(data.id)} enviada com sucesso!`
         );
     } catch (erro) {
         console.error('Erro ao criar requisição:', erro);
-
-        return res.redirect(
-            '/requisicoes?erro=' +
-            encodeURIComponent('Não foi possível criar a requisição.')
+        return redirecionarAcaoRequisicao(
+            res,
+            'nova',
+            'Não foi possível criar a requisição. Verifique se o script database/requisicoes_autor.sql foi executado no Supabase.'
         );
+    }
+});
+
+
+// Tela: editar requisição. Sem id, mostra a lista para escolher.
+app.get('/requisicoes/editar', exigirPermissao('criarRequisicao', 'aprovarRequisicao'), async (req, res) => {
+    try {
+        const id = lerIdRequisicao(req);
+        let requisicao = null;
+        let erro = req.query.erro || '';
+
+        if (id) {
+            const resultado = await carregarRequisicaoGerenciavel(req, id, 'editadas');
+            requisicao = resultado.requisicao || null;
+            erro = resultado.erro || erro;
+        }
+
+        const [produtos, gerenciaveis] = await Promise.all([
+            requisicao ? listarProdutosFormulario() : [],
+            requisicao ? [] : listarRequisicoesGerenciaveis(req)
+        ]);
+
+        return res.render('requisicoes-form', {
+            modo: 'editar',
+            produtos,
+            requisicao,
+            gerenciaveis,
+            erro
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir edição de requisição:', erro);
+        return redirecionarRequisicoes(
+            res,
+            'erro',
+            'Não foi possível abrir a edição. Verifique se o script database/requisicoes_autor.sql foi executado no Supabase.'
+        );
+    }
+});
+
+
+// Salvar edição (só pendentes)
+app.post('/requisicoes/:id/editar', exigirPermissao('criarRequisicao', 'aprovarRequisicao'), async (req, res) => {
+    const id = lerIdRequisicao(req);
+
+    try {
+        if (!id) {
+            return redirecionarAcaoRequisicao(res, 'editar', 'Requisição inválida.');
+        }
+
+        const resultado = await carregarRequisicaoGerenciavel(req, id, 'editadas');
+
+        if (resultado.erro) {
+            return redirecionarAcaoRequisicao(res, 'editar', resultado.erro);
+        }
+
+        const formulario = await lerFormularioRequisicao(req);
+
+        if (formulario.erro) {
+            return redirecionarAcaoRequisicao(res, 'editar', formulario.erro, id);
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('requisicoes')
+            .update(formulario.dados)
+            .eq('id', id)
+            .eq('status', 'Pendente')
+            .select('id')
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            return redirecionarAcaoRequisicao(res, 'editar', 'Requisição não encontrada ou já decidida.');
+        }
+
+        return redirecionarRequisicoes(
+            res,
+            'mensagem',
+            `Requisição nº ${formatarCodigoRequisicao(id)} atualizada com sucesso!`
+        );
+    } catch (erro) {
+        console.error('Erro ao editar requisição:', erro);
+        return redirecionarAcaoRequisicao(res, 'editar', 'Não foi possível salvar a requisição.', id);
+    }
+});
+
+
+// Tela: excluir requisição. Sem id, mostra a lista para escolher.
+app.get('/requisicoes/excluir', exigirPermissao('criarRequisicao', 'aprovarRequisicao'), async (req, res) => {
+    try {
+        const id = lerIdRequisicao(req);
+        let requisicao = null;
+        let erro = req.query.erro || '';
+
+        if (id) {
+            const resultado = await carregarRequisicaoGerenciavel(req, id, 'excluídas');
+            requisicao = resultado.requisicao || null;
+            erro = resultado.erro || erro;
+        }
+
+        return res.render('requisicoes-excluir', {
+            requisicao,
+            gerenciaveis: requisicao ? [] : await listarRequisicoesGerenciaveis(req),
+            erro
+        });
+    } catch (erro) {
+        console.error('Erro ao abrir exclusão de requisição:', erro);
+        return redirecionarRequisicoes(
+            res,
+            'erro',
+            'Não foi possível abrir a exclusão. Verifique se o script database/requisicoes_autor.sql foi executado no Supabase.'
+        );
+    }
+});
+
+
+// Excluir (só pendentes)
+app.post('/requisicoes/:id/excluir', exigirPermissao('criarRequisicao', 'aprovarRequisicao'), async (req, res) => {
+    const id = lerIdRequisicao(req);
+
+    try {
+        if (!id) {
+            return redirecionarAcaoRequisicao(res, 'excluir', 'Requisição inválida.');
+        }
+
+        const resultado = await carregarRequisicaoGerenciavel(req, id, 'excluídas');
+
+        if (resultado.erro) {
+            return redirecionarAcaoRequisicao(res, 'excluir', resultado.erro);
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('requisicoes')
+            .delete()
+            .eq('id', id)
+            .eq('status', 'Pendente')
+            .select('id')
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            return redirecionarAcaoRequisicao(res, 'excluir', 'Requisição não encontrada ou já decidida.');
+        }
+
+        return redirecionarRequisicoes(
+            res,
+            'mensagem',
+            `Requisição nº ${formatarCodigoRequisicao(id)} excluída.`
+        );
+    } catch (erro) {
+        console.error('Erro ao excluir requisição:', erro);
+        return redirecionarAcaoRequisicao(res, 'excluir', 'Não foi possível excluir a requisição.', id);
     }
 });
 
@@ -1520,10 +1764,17 @@ async function listarSolicitacoesGerenciaveis(req, podeAprovar) {
 
     const { data, error } = await consulta;
     if (error) throw error;
-    return data || [];
+    // Formato da lista de escolha (partials/escolha-pendente)
+    return (data || []).map(item => ({
+        id: item.codigo,
+        codigo: formatarCodigoCompra(item.codigo),
+        titulo: item.motivo,
+        detalhe: item.solicitante_email,
+        data: item.data_solicitacao
+    }));
 }
 
-async function listarProdutosCompra() {
+async function listarProdutosFormulario() {
     const { data, error } = await supabaseAdmin
         .from('produtos')
         .select('id, nome, quantidade')
@@ -1676,7 +1927,7 @@ app.get('/compras/nova', exigirPermissao('criarSolicitacaoCompra'), async (req, 
     try {
         return res.render('compras-form', {
             modo: 'nova',
-            produtos: await listarProdutosCompra(),
+            produtos: await listarProdutosFormulario(),
             solicitacao: null,
             gerenciaveis: [],
             erro: req.query.erro || ''
@@ -1754,7 +2005,7 @@ app.get('/compras/editar', exigirPermissao('criarSolicitacaoCompra', 'aprovarSol
         }
 
         const [produtos, gerenciaveis] = await Promise.all([
-            solicitacao ? listarProdutosCompra() : [],
+            solicitacao ? listarProdutosFormulario() : [],
             solicitacao ? [] : listarSolicitacoesGerenciaveis(req, podeAprovar)
         ]);
 

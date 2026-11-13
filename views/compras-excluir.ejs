@@ -53,7 +53,7 @@
 
             <% if (!solicitacao) { %>
 
-                <%- include('partials/compras-escolha', { acao: 'excluir', gerenciaveis, rotulo: '🗑 Excluir' }) %>
+                <%- include('partials/escolha-pendente', { itens: gerenciaveis, hrefBase: '/compras/excluir?codigo=', rotulo: '🗑 Excluir', perigo: true, nome: 'solicitações' }) %>
 
             <% } else { %>
 

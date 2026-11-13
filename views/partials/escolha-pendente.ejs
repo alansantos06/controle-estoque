@@ -1,0 +1,47 @@
+<%
+    // Lista para escolher um registro pendente a editar/excluir.
+    // Parâmetros:
+    //   itens    [{ id, codigo, titulo, detalhe, data }]
+    //   hrefBase link de cada item, ao qual se soma o id (ex.: '/compras/editar?codigo=')
+    //   rotulo   texto do botão
+    //   perigo   true para o botão vermelho (excluir)
+    //   nome     'solicitações' | 'requisições'
+    const dataEscolha = (valor) => new Date(valor).toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        dateStyle: 'short',
+        timeStyle: 'short'
+    });
+%>
+
+<section class="panel-card requisicoes-card">
+    <div class="panel-header">
+        <div>
+            <h2>Escolha <%= nome === 'requisições' ? 'a requisição' : 'a solicitação' %></h2>
+            <p>Somente <%= nome %> pendentes podem ser alteradas.</p>
+        </div>
+        <span class="codigo-produto">Pendentes: <%= itens.length %></span>
+    </div>
+
+    <% if (itens.length === 0) { %>
+        <div class="empty-state">
+            <span>✓</span>
+            <p>Nenhuma <%= nome === 'requisições' ? 'requisição pendente disponível' : 'solicitação pendente disponível' %> para você.</p>
+        </div>
+    <% } else { %>
+        <ul class="compra-escolha">
+            <% itens.forEach(item => { %>
+                <li>
+                    <div class="compra-escolha-info">
+                        <strong class="compra-codigo">#<%= item.codigo %></strong>
+                        <span class="compra-escolha-motivo"><%= item.titulo %></span>
+                        <small><%= item.detalhe %> · <%= dataEscolha(item.data) %></small>
+                    </div>
+                    <a
+                        href="<%= hrefBase %><%= item.id %>"
+                        class="compra-botao-topo <%= perigo ? 'compra-botao-topo-perigo' : '' %>"
+                    ><%= rotulo %></a>
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
+</section>
