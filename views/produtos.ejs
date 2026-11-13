@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
@@ -6,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Produtos | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}</script>
 </head>
 
 <body class="dashboard-page">
@@ -19,45 +20,71 @@
                 tituloPagina: 'Produtos'
             }) %>
 
-            <section class="panel-card">
+            <section class="welcome-panel">
                 <div>
+                    <p class="welcome-label">ALMOXARIFADO</p>
                     <h2>Produtos cadastrados</h2>
                     <p>Consulte, pesquise e gerencie os materiais do almoxarifado.</p>
                 </div>
 
-                <%
-                    let textoMensagem = '';
-                    let classeMensagem = '';
-
-                    if (mensagem === 'editado') {
-                        textoMensagem = 'Produto atualizado com sucesso!';
-                        classeMensagem = 'mensagem-sucesso';
-                    } else if (mensagem === 'excluido') {
-                        textoMensagem = 'Produto excluído com sucesso!';
-                        classeMensagem = 'mensagem-sucesso';
-                    } else if (mensagem === 'entradaRegistrada') {
-                        textoMensagem = 'Entrada registrada com sucesso!';
-                        classeMensagem = 'mensagem-sucesso';
-                    } else if (mensagem === 'saidaRegistrada') {
-                        textoMensagem = 'Saída registrada com sucesso!';
-                        classeMensagem = 'mensagem-sucesso';
-                    } else if (mensagem === 'cadastrado') {
-                        textoMensagem = 'Produto cadastrado com sucesso!';
-                        classeMensagem = 'mensagem-sucesso';
-                    } else if (erro === 'possuiMovimentacoes') {
-                        textoMensagem = 'Não é possível excluir este produto porque ele possui movimentações.';
-                        classeMensagem = 'mensagem-erro';
-                    } else if (erro === 'excluir') {
-                        textoMensagem = 'Não foi possível excluir o produto. Tente novamente.';
-                        classeMensagem = 'mensagem-erro';
-                    }
-                %>
-
-                <% if (textoMensagem) { %>
-                    <p class="<%= classeMensagem %>" id="mensagemProdutos">
-                        <%= textoMensagem %>
-                    </p>
+                <% if (permissoes.cadastrarProdutos || permissoes.movimentarEstoque) { %>
+                    <div class="compra-acoes-topo">
+                        <% if (permissoes.cadastrarProdutos) { %>
+                            <a href="/produtos/novo" class="primary-link">
+                                ＋ Novo produto
+                            </a>
+                        <% } %>
+                        <% if (permissoes.movimentarEstoque) { %>
+                            <a href="/movimentacoes/nova" class="compra-botao-topo">
+                                ⇄ Nova movimentação
+                            </a>
+                        <% } %>
+                    </div>
                 <% } %>
+            </section>
+
+            <%
+                let textoMensagem = '';
+                let classeMensagem = '';
+
+                if (mensagem === 'editado') {
+                    textoMensagem = 'Produto atualizado com sucesso!';
+                    classeMensagem = 'mensagem-sucesso';
+                } else if (mensagem === 'excluido') {
+                    textoMensagem = 'Produto excluído com sucesso!';
+                    classeMensagem = 'mensagem-sucesso';
+                } else if (mensagem === 'entradaRegistrada') {
+                    textoMensagem = 'Entrada registrada com sucesso!';
+                    classeMensagem = 'mensagem-sucesso';
+                } else if (mensagem === 'saidaRegistrada') {
+                    textoMensagem = 'Saída registrada com sucesso!';
+                    classeMensagem = 'mensagem-sucesso';
+                } else if (mensagem === 'cadastrado') {
+                    textoMensagem = 'Produto cadastrado com sucesso!';
+                    classeMensagem = 'mensagem-sucesso';
+                } else if (erro === 'possuiMovimentacoes') {
+                    textoMensagem = 'Não é possível excluir este produto porque ele possui movimentações.';
+                    classeMensagem = 'mensagem-erro';
+                } else if (erro === 'excluir') {
+                    textoMensagem = 'Não foi possível excluir o produto. Tente novamente.';
+                    classeMensagem = 'mensagem-erro';
+                }
+            %>
+
+            <% if (textoMensagem) { %>
+                <div class="<%= classeMensagem %>" id="mensagemProdutos" role="status">
+                    <%= textoMensagem %>
+                </div>
+            <% } %>
+
+            <section class="panel-card">
+                <div class="panel-header">
+                    <div>
+                        <h2>Lista de produtos</h2>
+                        <p>Pesquise pelo nome ou código e acompanhe o nível de cada material.</p>
+                    </div>
+                    <span class="codigo-produto">Total: <%= produtos.length %></span>
+                </div>
 
                 <form action="/produtos" method="GET" class="filtros-produtos">
                     <div class="campo-busca">
@@ -88,19 +115,6 @@
                     </div>
                 </form>
 
-                <div class="acoes-produtos">
-                    <% if (permissoes.cadastrarProdutos) { %>
-                        <a href="/produtos/novo" class="botao-link">
-                            + Novo produto
-                        </a>
-                    <% } %>
-                    <% if (permissoes.movimentarEstoque) { %>
-                        <a href="/movimentacoes/nova" class="botao-link botao-secundario">
-                            Nova movimentação
-                        </a>
-                    <% } %>
-                </div>
-
                 <% if (produtos.length === 0) { %>
                     <div class="estado-vazio">
                         <h3>Nenhum produto encontrado</h3>
@@ -122,22 +136,30 @@
                             </thead>
 
                             <tbody>
-                                <% produtos.forEach(produto => { %>
+                                <% produtos.forEach(produto => {
+                                    const baixo = produto.quantidade <= produto.estoque_minimo;
+                                    const referencia = Math.max(produto.estoque_maximo || 0, produto.quantidade, 1);
+                                    const nivel = Math.min(100, Math.round((produto.quantidade / referencia) * 100));
+                                %>
                                     <tr>
                                         <td>
-                                            <strong>MAT<%= String(produto.id).padStart(3, '0') %></strong>
+                                            <span class="codigo-chip">MAT<%= String(produto.id).padStart(3, '0') %></span>
                                         </td>
 
-                                        <td><%= produto.nome %></td>
+                                        <td><strong><%= produto.nome %></strong></td>
 
                                         <td>
-                                            <%= produto.quantidade %>
-
-                                            <% if (produto.quantidade <= produto.estoque_minimo) { %>
-                                                <span class="status-badge status-warning">
-                                                    Estoque baixo
+                                            <div class="nivel-estoque">
+                                                <div class="nivel-estoque-topo">
+                                                    <strong><%= produto.quantidade %></strong>
+                                                    <% if (baixo) { %>
+                                                        <span class="status-badge status-warning">Estoque baixo</span>
+                                                    <% } %>
+                                                </div>
+                                                <span class="nivel-estoque-barra" aria-hidden="true">
+                                                    <span class="<%= baixo ? 'nivel-baixo' : '' %>" style="width: <%= nivel %>%"></span>
                                                 </span>
-                                            <% } %>
+                                            </div>
                                         </td>
 
                                         <td><%= produto.estoque_minimo %></td>
@@ -150,7 +172,7 @@
                                                     href="/produtos/<%= produto.id %>/editar"
                                                     class="botao-acao"
                                                 >
-                                                    Editar
+                                                    ✎ Editar
                                                 </a>
 
                                                 <form
@@ -169,7 +191,7 @@
                                                         class="botao-excluir"
                                                         onclick="return confirm('Tem certeza que deseja excluir este produto?')"
                                                     >
-                                                        Excluir
+                                                        🗑 Excluir
                                                     </button>
                                                 </form>
                                             </div>
@@ -183,6 +205,10 @@
 
                 <% } %>
             </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
 
         </main>
     </div>

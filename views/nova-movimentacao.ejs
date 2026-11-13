@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ajuste de estoque | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}</script>
 </head>
 
 <body class="dashboard-page">
@@ -19,10 +21,24 @@
                 tituloPagina: 'Ajuste de estoque'
             }) %>
 
-            <section class="panel-card">
+            <section class="welcome-panel">
                 <div>
+                    <p class="welcome-label">MOVIMENTAÇÕES</p>
                     <h2>Registrar ajuste de estoque</h2>
                     <p>Registre entradas ou saídas de materiais e mantenha o estoque atualizado.</p>
+                </div>
+
+                <a href="/movimentacoes" class="botao-secundario">
+                    ◷ Ver histórico
+                </a>
+            </section>
+
+            <section class="panel-card formulario-produto">
+                <div class="panel-header">
+                    <div>
+                        <h2>Dados do ajuste</h2>
+                        <p>Saídas só são aceitas quando há estoque suficiente.</p>
+                    </div>
                 </div>
 
                 <%
@@ -46,9 +62,9 @@
                 %>
 
                 <% if (textoErro) { %>
-                    <p class="mensagem-erro" id="mensagemErro">
+                    <div class="mensagem-erro" id="mensagemErro" role="alert">
                         <%= textoErro %>
-                    </p>
+                    </div>
                 <% } %>
 
                 <form action="/movimentacoes" method="POST" class="form-produto">
@@ -96,14 +112,18 @@
                     </div>
 
                     <div class="acoes-formulario">
-                        <button type="submit">Registrar ajuste</button>
-
                         <a href="/produtos" class="botao-secundario">
                             Voltar para produtos
                         </a>
+
+                        <button type="submit">⇄ Registrar ajuste</button>
                     </div>
                 </form>
             </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
 
         </main>
     </div>

@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastrar produto | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}</script>
 </head>
 
 <body class="dashboard-page">
@@ -19,32 +21,46 @@
                 tituloPagina: 'Cadastrar produto'
             }) %>
 
-            <section class="panel-card">
+            <section class="welcome-panel">
                 <div>
+                    <p class="welcome-label">CADASTRO DE MATERIAIS</p>
                     <h2>Novo produto</h2>
                     <p>Preencha os dados para cadastrar um material no almoxarifado.</p>
                 </div>
 
+                <a href="/produtos" class="botao-secundario">
+                    ← Voltar para produtos
+                </a>
+            </section>
+
+            <section class="panel-card formulario-produto">
+                <div class="panel-header">
+                    <div>
+                        <h2>Dados do produto</h2>
+                        <p>Os campos de estoque definem os alertas de estoque baixo.</p>
+                    </div>
+                </div>
+
                 <% if (erro === 'nome') { %>
-                    <p class="mensagem-erro" id="mensagemErro">
+                    <div class="mensagem-erro" id="mensagemErro" role="alert">
                         O nome do produto é obrigatório.
-                    </p>
+                    </div>
                 <% } else if (erro === 'numeros') { %>
-                    <p class="mensagem-erro" id="mensagemErro">
+                    <div class="mensagem-erro" id="mensagemErro" role="alert">
                         Os valores de estoque devem ser números válidos.
-                    </p>
+                    </div>
                 <% } else if (erro === 'negativo') { %>
-                    <p class="mensagem-erro" id="mensagemErro">
+                    <div class="mensagem-erro" id="mensagemErro" role="alert">
                         Os valores de estoque não podem ser negativos.
-                    </p>
+                    </div>
                 <% } else if (erro === 'limites') { %>
-                    <p class="mensagem-erro" id="mensagemErro">
+                    <div class="mensagem-erro" id="mensagemErro" role="alert">
                         O estoque máximo não pode ser menor que o estoque mínimo.
-                    </p>
+                    </div>
                 <% } else if (erro === 'servidor') { %>
-                    <p class="mensagem-erro" id="mensagemErro">
+                    <div class="mensagem-erro" id="mensagemErro" role="alert">
                         Não foi possível cadastrar o produto. Tente novamente.
-                    </p>
+                    </div>
                 <% } %>
 
                 <form action="/produtos" method="POST" class="form-produto">
@@ -104,13 +120,17 @@
                     </div>
 
                     <div class="acoes-formulario">
-                        <button type="submit">Cadastrar produto</button>
                         <a href="/produtos" class="botao-secundario">
                             Cancelar e voltar
                         </a>
+                        <button type="submit">＋ Cadastrar produto</button>
                     </div>
                 </form>
             </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
 
         </main>
     </div>

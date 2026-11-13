@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatórios | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}</script>
 
     <style>
         .relatorios-conteudo {
@@ -393,6 +395,20 @@
 
             <div class="relatorios-conteudo">
 
+                <section class="welcome-panel">
+                    <div>
+                        <p class="welcome-label">ANÁLISES</p>
+                        <h2>Relatórios do estoque</h2>
+                        <p>Acompanhe o volume de entradas e saídas e exporte os dados do período.</p>
+                    </div>
+
+                    <div class="compra-acoes-topo">
+                        <a href="/relatorios/exportar?dataInicio=<%= encodeURIComponent(dataInicio || '') %>&dataFim=<%= encodeURIComponent(dataFim || '') %>" class="primary-link">
+                            ⤓ Baixar relatório CSV
+                        </a>
+                    </div>
+                </section>
+
                 <section class="relatorio-card">
                     <h2>Filtrar período</h2>
                     <p>Selecione as datas para analisar as movimentações do estoque.</p>
@@ -421,22 +437,22 @@
 
                 <section class="relatorio-resumo">
                     <div class="resumo-item">
-                        <strong>Total de movimentações</strong>
+                        <strong>⇄ Total de movimentações</strong>
                         <div class="resumo-valor"><%= movimentacoes.length %></div>
                     </div>
 
                     <div class="resumo-item entradas">
-                        <strong>Unidades que entraram</strong>
+                        <strong>↑ Unidades que entraram</strong>
                         <div class="resumo-valor"><%= totalEntradas %></div>
                     </div>
 
                     <div class="resumo-item saidas">
-                        <strong>Unidades que saíram</strong>
+                        <strong>↓ Unidades que saíram</strong>
                         <div class="resumo-valor"><%= totalSaidas %></div>
                     </div>
 
                     <div class="resumo-item">
-                        <strong>Produtos cadastrados</strong>
+                        <strong>▤ Produtos cadastrados</strong>
                         <div class="resumo-valor"><%= produtos.length %></div>
                     </div>
                 </section>
@@ -488,29 +504,16 @@
                     <% } %>
                 </section>
 
-               
-
-               
-
-                
-                <section class="relatorio-card">
-                    <h2>Exportar relatório</h2>
-                    
-                    <div class="acoes-relatorio">
-                        <a
-                            href="/relatorios/exportar?dataInicio=<%= encodeURIComponent(dataInicio || '') %>&dataFim=<%= encodeURIComponent(dataFim || '') %>"
-                            class="botao">
-                            Baixar relatório CSV
-                        </a>
-                    </div>
-                </section>
-
                 <nav class="navegacao-relatorio">
-                    <a href="/">Voltar ao início</a>
-                    <a href="/produtos">Ver produtos</a>
-                    <a href="/movimentacoes">Ver histórico</a>
+                    <a href="/" class="botao-secundario">← Voltar ao início</a>
+                    <a href="/produtos" class="botao-secundario">▤ Ver produtos</a>
+                    <a href="/movimentacoes" class="botao-secundario">◷ Ver histórico</a>
                 </nav>
             </div>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
         </main>
     </div>
 

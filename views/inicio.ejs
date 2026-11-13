@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}</script>
 </head>
 <body class="dashboard-page">
     <div class="app-layout">
@@ -100,10 +102,10 @@
                                     <% produtosEstoqueBaixo.forEach(produto => { %>
                                         <tr>
                                             <td>
-                                                MAT<%= String(produto.id).padStart(3, '0') %>
+                                                <span class="codigo-chip">MAT<%= String(produto.id).padStart(3, '0') %></span>
                                             </td>
 
-                                            <td><%= produto.nome %></td>
+                                            <td><strong><%= produto.nome %></strong></td>
 
                                             <td>
                                                 <strong><%= produto.quantidade %></strong>

@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Requisições | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}</script>
 </head>
 <body class="dashboard-page">
     <div class="app-layout">
@@ -122,7 +124,7 @@
 
                                         <td><%= requisicao.solicitante %></td>
 
-                                        <td>
+                                        <td class="compra-nowrap">
                                             <%= new Date(requisicao.data_solicitacao)
                                                 .toLocaleString('pt-BR') %>
                                         </td>

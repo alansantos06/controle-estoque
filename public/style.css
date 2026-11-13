@@ -1401,28 +1401,6 @@ body.dashboard-page {
     }
 }
 
-/* Botão Limpar filtros */
-.dashboard-page .acoes-filtros a.botao-secundario {
-    background-color: #e5e7eb;
-    color: #374151;
-    border: 1px solid #d1d5db;
-}
-
-.dashboard-page .acoes-filtros a.botao-secundario:hover {
-    background-color: #d1d5db;
-}
-
-/* Botão Nova movimentação */
-.dashboard-page .acoes-produtos a.botao-secundario {
-    background-color: #2563eb;
-    color: #ffffff;
-    border: 1px solid #2563eb;
-}
-
-.dashboard-page .acoes-produtos a.botao-secundario:hover {
-    background-color: #1d4ed8;
-    border-color: #1d4ed8;
-}
 
 
 
@@ -1596,18 +1574,6 @@ body.dashboard-page {
 
 
 
-/* Melhorar a visibilidade dos campos de data no tema escuro */
-html[data-theme="dark"] .dashboard-page input[type="date"] {
-    color-scheme: dark;
-    color: #f9fafb;
-    background-color: #1f2937;
-    border-color: #4b5563;
-}
-
-/* Garantir boa visibilidade no tema claro */
-html[data-theme="light"] .dashboard-page input[type="date"] {
-    color-scheme: light;
-}
 
 
 
@@ -1651,26 +1617,6 @@ html[data-theme="light"] .dashboard-page input[type="date"] {
     margin: 0;
 }
 
-/* Campos de data */
-.dashboard-page .filtros-produtos input[type="date"] {
-    width: 100%;
-    min-height: 42px;
-    box-sizing: border-box;
-    padding: 9px 10px;
-    border: 1px solid var(--border-color, #4b5563);
-    border-radius: 8px;
-    font: inherit;
-}
-
-html[data-theme="dark"] .dashboard-page .filtros-produtos input[type="date"] {
-    color-scheme: dark;
-    color: #f3f4f6;
-    background-color: #1f2937;
-}
-
-html[data-theme="light"] .dashboard-page .filtros-produtos input[type="date"] {
-    color-scheme: light;
-}
 
 
 /* Histórico: hierarquia visual dos títulos */
@@ -1685,71 +1631,6 @@ html[data-theme="light"] .dashboard-page .filtros-produtos input[type="date"] {
     margin-top: 0;
 }
 
-/* Campos de data harmonizados com o tema escuro */
-html[data-theme="dark"] .dashboard-page .filtros-produtos input[type="date"] {
-    background-color: #feffff;
-    color: #000000;
-    border: 1px solid #ffffff;
-    border-radius: 8px;
-    color-scheme: dark;
-}
-
-html[data-theme="dark"] .dashboard-page .filtros-produtos input[type="date"]:focus {
-    outline: none;
-    border-color: #2fa537;
-    box-shadow: 0 0 0 2px rgba(1, 255, 43, 0.15);
-}
-
-/* Campos de data no tema claro */
-html[data-theme="light"] .dashboard-page .filtros-produtos input[type="date"] {
-    background-color: #ffffff;
-    color: #1f2937;
-    border: 1px solid #d1d5db;
-    color-scheme: light;
-}
-
-
-/* Cor do ícone do calendário no modo escuro */
-html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-    cursor: pointer;
-}
-
-
-/* Relatórios: botão limpar filtro cinza */
-.filtros-relatorio .botao-secundario {
-    background-color: #e5e7eb;
-    color: #374151;
-    border: 1px solid #d1d5db;
-}
-
-
-
-/* Forçar campos de data brancos na página de Relatórios */
-html[data-theme="dark"] .filtros-relatorio input[type="date"],
-html[data-theme="light"] .filtros-relatorio input[type="date"],
-.filtros-relatorio input[type="date"] {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-    color: #222222 !important;
-    border: 1px solid #d1d5db !important;
-    color-scheme: light !important;
-    opacity: 1 !important;
-}
-
-.filtros-relatorio input[type="date"]::-webkit-datetime-edit,
-.filtros-relatorio input[type="date"]::-webkit-datetime-edit-text,
-.filtros-relatorio input[type="date"]::-webkit-datetime-edit-month-field,
-.filtros-relatorio input[type="date"]::-webkit-datetime-edit-day-field,
-.filtros-relatorio input[type="date"]::-webkit-datetime-edit-year-field {
-    color: #222222 !important;
-}
-
-.filtros-relatorio input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: none !important;
-    opacity: 1 !important;
-    cursor: pointer;
-}
 
 
 
@@ -3175,4 +3056,1128 @@ body.tem-selecao .botao-joinha {
 .dialogo-decisao button:disabled {
     opacity: 0.6;
     cursor: wait;
+}
+
+
+
+
+/* =====================================================================
+   POLIMENTO VISUAL
+   Camada final que padroniza a aparência de todas as telas.
+   Vem por último de propósito: sobrescreve as regras antigas acima.
+   ===================================================================== */
+
+/* ---------- Tokens ---------- */
+
+:root {
+    /* Apelidos para variáveis usadas em regras antigas (antes indefinidas,
+       o que deixava campos brancos no modo escuro) */
+    --border-color: var(--border);
+    --card-background: var(--surface);
+    --card-bg: var(--surface);
+    --text-color: var(--text);
+    --text-primary: var(--text);
+    --text-secondary: var(--muted);
+    --input-bg: var(--surface);
+    --table-header-bg: var(--surface-soft);
+
+    --fonte: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --raio: 10px;
+    --raio-grande: 14px;
+    --sombra-elevada: 0 10px 28px rgba(22, 58, 38, 0.10);
+}
+
+:root,
+:root[data-theme="light"] {
+    --border-strong: #d3ddd6;
+    --btn-primary: #15803d;
+    --btn-primary-hover: #166534;
+    --success-soft: #dcfce7;
+    --success-text: #166534;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --danger-soft: #fee2e2;
+    --danger-text: #991b1b;
+    --warning-soft: #fef3c7;
+    --warning-text: #92400e;
+    --info-soft: #dbeafe;
+    --info-text: #1e40af;
+    --chart-grid: #e5ece7;
+    --chart-track: #e5ece7;
+}
+
+:root[data-theme="dark"] {
+    --border-strong: #3d5247;
+    --btn-primary: #15803d;
+    --btn-primary-hover: #16a34a;
+    --success-soft: #14532d;
+    --success-text: #86efac;
+    --danger: #dc2626;
+    --danger-hover: #ef4444;
+    --danger-soft: #3b1d1d;
+    --danger-text: #fca5a5;
+    --warning-soft: #3a2a10;
+    --warning-text: #fde68a;
+    --info-soft: #172554;
+    --info-text: #93c5fd;
+    --chart-grid: #2b3d33;
+    --chart-track: #2b3d33;
+    --sombra-elevada: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Base ---------- */
+
+body.dashboard-page {
+    font-family: var(--fonte);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Neutraliza o "section p" antigo (texto grande e azul) sem brigar
+   com regras de classe */
+:where(.dashboard-page) section p {
+    margin-bottom: 0;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+:where(.dashboard-page) a:not([class]) {
+    color: var(--green);
+    font-weight: 600;
+}
+
+:where(.dashboard-page) a:not([class]):hover {
+    text-decoration: underline;
+}
+
+body.dashboard-page ::selection {
+    background: var(--green-soft);
+    color: var(--text);
+}
+
+body.dashboard-page :focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+}
+
+/* ---------- Topo da página ---------- */
+
+body.dashboard-page .topbar {
+    margin-bottom: 22px;
+}
+
+body.dashboard-page .breadcrumb {
+    letter-spacing: 0.2px;
+}
+
+body.dashboard-page .topbar h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+body.dashboard-page .theme-button {
+    min-height: 40px;
+    padding: 9px 14px;
+    border-radius: var(--raio);
+    font-weight: 600;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+body.dashboard-page .theme-button:hover {
+    border-color: var(--green);
+}
+
+/* ---------- Menu lateral ---------- */
+
+body.dashboard-page .brand-icon {
+    background: linear-gradient(135deg, #dcfce7, #86efac);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+body.dashboard-page .menu-link {
+    position: relative;
+    font-size: 13.5px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+body.dashboard-page .menu-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+body.dashboard-page .menu-link.ativo {
+    background: rgba(74, 222, 128, 0.16);
+    color: #ffffff;
+    box-shadow: inset 3px 0 0 #4ade80;
+}
+
+body.dashboard-page .menu-link.ativo .menu-icon {
+    color: #86efac;
+}
+
+body.dashboard-page .logout-button {
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--sidebar-text);
+    font-size: 13px;
+}
+
+body.dashboard-page .logout-button:hover {
+    border-color: rgba(252, 165, 165, 0.5);
+    background: rgba(239, 68, 68, 0.14);
+    color: #fecaca;
+}
+
+/* ---------- Cabeçalho das telas (welcome-panel) ---------- */
+
+body.dashboard-page .welcome-panel {
+    position: relative;
+    overflow: hidden;
+    padding: 24px 26px;
+    border-radius: var(--raio-grande);
+    background:
+        radial-gradient(circle at 100% 0%, var(--green-soft) 0, transparent 45%),
+        var(--surface);
+}
+
+body.dashboard-page .welcome-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #22c55e, #15803d);
+}
+
+body.dashboard-page .welcome-panel h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+body.dashboard-page .welcome-panel p:not(.welcome-label) {
+    max-width: 620px;
+    font-size: 13.5px;
+}
+
+body.dashboard-page .welcome-label {
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+}
+
+/* ---------- Cartões e painéis ---------- */
+
+body.dashboard-page .panel-card {
+    padding: 24px;
+    border-radius: var(--raio-grande);
+}
+
+body.dashboard-page .panel-card h2 {
+    margin: 0 0 6px;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 700;
+}
+
+body.dashboard-page .panel-card .panel-header p,
+body.dashboard-page .panel-card > div:first-child:not([class]) p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+/* Bloco de título sem classe (telas antigas) ganha respiro abaixo */
+body.dashboard-page .panel-card > div:first-child:not([class]) {
+    margin-bottom: 20px;
+}
+
+body.dashboard-page .panel-header {
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Contador / código no canto do painel */
+body.dashboard-page .codigo-produto {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+body.dashboard-page .codigo-chip {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Cartões de números do dashboard */
+body.dashboard-page .dashboard-card {
+    padding: 22px;
+    border-radius: var(--raio-grande);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+body.dashboard-page .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-elevada);
+}
+
+body.dashboard-page .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+}
+
+body.dashboard-page .estoque-icon {
+    background: var(--info-soft);
+    color: var(--info-text);
+}
+
+body.dashboard-page .card-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+body.dashboard-page .dashboard-card h2 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+body.dashboard-page .dashboard-card small {
+    font-size: 12px;
+}
+
+body.dashboard-page .card-alerta {
+    border-color: color-mix(in srgb, #f59e0b 35%, var(--border));
+}
+
+body.dashboard-page .text-link {
+    font-size: 13px;
+}
+
+body.dashboard-page .text-link:hover {
+    text-decoration: underline;
+}
+
+body.dashboard-page .dashboard-footer {
+    padding-top: 28px;
+    font-size: 12px;
+}
+
+/* ---------- Botões ---------- */
+
+/* Principal (verde) */
+body.dashboard-page .primary-link,
+body.dashboard-page .botao-link,
+body.dashboard-page .botao,
+body.dashboard-page .acoes-filtros button,
+body.dashboard-page .acoes-formulario button,
+body.dashboard-page .decisao-botao-aprovar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    margin: 0;
+    padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: var(--raio);
+    background: var(--btn-primary);
+    color: #ffffff;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+body.dashboard-page .primary-link:hover,
+body.dashboard-page .botao-link:hover,
+body.dashboard-page .botao:hover,
+body.dashboard-page .acoes-filtros button:hover,
+body.dashboard-page .acoes-formulario button:hover,
+body.dashboard-page .decisao-botao-aprovar:hover {
+    background: var(--btn-primary-hover);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(21, 128, 61, 0.25);
+}
+
+/* Secundário (contorno neutro) */
+body.dashboard-page .botao-secundario,
+body.dashboard-page .compra-botao-topo,
+body.dashboard-page .welcome-panel .botao-secundario,
+body.dashboard-page .acoes-filtros .botao-secundario,
+body.dashboard-page .acoes-formulario .botao-secundario,
+body.dashboard-page .acoes-produtos .botao-secundario,
+body.dashboard-page .compra-acoes-form .compra-botao-secundario {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 42px;
+    margin: 0;
+    padding: 0 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--raio);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: none;
+    transform: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+body.dashboard-page .botao-secundario:hover,
+body.dashboard-page .compra-botao-topo:hover,
+body.dashboard-page .welcome-panel .botao-secundario:hover,
+body.dashboard-page .acoes-filtros .botao-secundario:hover,
+body.dashboard-page .acoes-formulario .botao-secundario:hover,
+body.dashboard-page .acoes-produtos .botao-secundario:hover,
+body.dashboard-page .compra-acoes-form .compra-botao-secundario:hover {
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green);
+    box-shadow: none;
+    transform: none;
+}
+
+body.dashboard-page .compra-botao-topo-perigo {
+    color: var(--danger-text);
+}
+
+body.dashboard-page .compra-botao-topo-perigo:hover {
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger-text);
+}
+
+/* Tracejado ("Adicionar outro produto") */
+body.dashboard-page .compra-botao-secundario {
+    min-height: 40px;
+    border-radius: var(--raio);
+    font-weight: 600;
+}
+
+/* Perigo (vermelho) */
+body.dashboard-page .compra-botao-excluir,
+body.dashboard-page .acoes-formulario .compra-botao-excluir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: var(--raio);
+    background: var(--danger);
+    color: #ffffff;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+body.dashboard-page .compra-botao-excluir:hover,
+body.dashboard-page .acoes-formulario .compra-botao-excluir:hover {
+    background: var(--danger-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+/* Botões compactos dentro das tabelas */
+body.dashboard-page .dashboard-table .botao-acao,
+body.dashboard-page .dashboard-table .botao-excluir,
+body.dashboard-page .dashboard-table .compra-botao-receber {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transform: none;
+    box-shadow: none;
+}
+
+body.dashboard-page .dashboard-table .botao-acao:hover {
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+body.dashboard-page .dashboard-table .botao-excluir {
+    border-color: transparent;
+    background: var(--danger-soft);
+    color: var(--danger-text);
+}
+
+body.dashboard-page .dashboard-table .botao-excluir:hover {
+    background: var(--danger);
+    color: #ffffff;
+    transform: none;
+}
+
+body.dashboard-page .dashboard-table .compra-botao-receber {
+    border-color: transparent;
+    background: var(--info-soft);
+    color: var(--info-text);
+}
+
+body.dashboard-page .dashboard-table .compra-botao-receber:hover {
+    background: var(--info-soft);
+    color: var(--info-text);
+    filter: brightness(0.95);
+    transform: none;
+}
+
+body.dashboard-page .acoes-tabela {
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+/* ---------- Campos de formulário ---------- */
+
+body.dashboard-page label {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+body.dashboard-page :is(
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="date"],
+    select,
+    textarea
+) {
+    min-height: 42px;
+    margin: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--raio);
+    background-color: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    box-shadow: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+body.dashboard-page textarea {
+    line-height: 1.5;
+}
+
+body.dashboard-page :is(input, select, textarea)::placeholder {
+    color: var(--muted);
+    opacity: 0.8;
+}
+
+body.dashboard-page :is(
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="date"],
+    select,
+    textarea
+):hover {
+    border-color: color-mix(in srgb, var(--green) 45%, var(--border-strong));
+}
+
+body.dashboard-page :is(
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="date"],
+    select,
+    textarea
+):focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent);
+}
+
+body.dashboard-page input[type="checkbox"] {
+    accent-color: var(--btn-primary);
+}
+
+body.dashboard-page .campo-formulario small {
+    color: var(--muted);
+}
+
+/* Filtros: linha alinhada com os botões */
+body.dashboard-page .filtros-produtos {
+    gap: 14px;
+    margin: 0 0 22px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--raio);
+    background: var(--surface-soft);
+}
+
+body.dashboard-page .filtros-produtos .campo-produto label,
+body.dashboard-page .campo-busca label {
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+body.dashboard-page .filtro-estoque {
+    min-height: 42px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Bloco "Quantidade atual" da edição de produto */
+body.dashboard-page .informacao-estoque {
+    border-color: var(--border);
+    border-radius: var(--raio);
+    background: var(--surface-soft);
+}
+
+body.dashboard-page .informacao-estoque strong {
+    color: var(--green);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Ações no rodapé dos formulários */
+body.dashboard-page .acoes-formulario {
+    justify-content: flex-end;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
+body.dashboard-page .acoes-formulario.compra-acoes-form,
+body.dashboard-page .dialogo-decisao .compra-acoes-form {
+    border-top: none;
+    padding-top: 4px;
+}
+
+/* ---------- Tabelas ---------- */
+
+body.dashboard-page .table-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+body.dashboard-page .dashboard-table {
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 0;
+    overflow: visible;
+}
+
+body.dashboard-page .dashboard-table th {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+body.dashboard-page .dashboard-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13.5px;
+    vertical-align: middle;
+}
+
+body.dashboard-page .dashboard-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+body.dashboard-page .dashboard-table tbody tr:hover {
+    background: transparent;
+}
+
+body.dashboard-page .dashboard-table tbody tr:hover td {
+    background: var(--surface-soft);
+}
+
+body.dashboard-page .compra-tabela td {
+    vertical-align: top;
+}
+
+/* ---------- Mensagens ---------- */
+
+body.dashboard-page .mensagem-sucesso,
+body.dashboard-page .mensagem-erro,
+body.dashboard-page #mensagemErro {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 20px;
+    padding: 13px 16px;
+    border: 1px solid;
+    border-radius: var(--raio);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+body.dashboard-page .mensagem-sucesso::before,
+body.dashboard-page .mensagem-erro::before,
+body.dashboard-page #mensagemErro::before {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+body.dashboard-page .mensagem-sucesso {
+    border-color: color-mix(in srgb, var(--success-text) 30%, transparent);
+    background: var(--success-soft);
+    color: var(--success-text);
+}
+
+body.dashboard-page .mensagem-sucesso::before {
+    content: "✓";
+    background: #16a34a;
+}
+
+body.dashboard-page .mensagem-erro,
+body.dashboard-page #mensagemErro {
+    border-color: color-mix(in srgb, var(--danger-text) 30%, transparent);
+    background: var(--danger-soft);
+    color: var(--danger-text);
+}
+
+body.dashboard-page .mensagem-erro::before,
+body.dashboard-page #mensagemErro::before {
+    content: "!";
+    background: var(--danger);
+}
+
+/* ---------- Selos de status ---------- */
+
+body.dashboard-page :is(
+    .status-requisicao,
+    .compra-status,
+    .status-entrada,
+    .status-saida,
+    .stock-badge,
+    .status-badge
+) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+body.dashboard-page :is(.status-requisicao, .compra-status)::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+body.dashboard-page :is(.status-pendente, .compra-status-pendente, .stock-badge, .status-badge.status-warning) {
+    background: var(--warning-soft);
+    color: var(--warning-text);
+}
+
+body.dashboard-page :is(.status-aprovada, .compra-status-recebida, .status-entrada, .status-badge.status-success) {
+    background: var(--success-soft);
+    color: var(--success-text);
+}
+
+body.dashboard-page :is(.status-rejeitada, .compra-status-rejeitada, .status-saida) {
+    background: var(--danger-soft);
+    color: var(--danger-text);
+}
+
+body.dashboard-page .compra-status-comprada {
+    background: var(--info-soft);
+    color: var(--info-text);
+}
+
+/* ---------- Estados vazios ---------- */
+
+body.dashboard-page .empty-state,
+body.dashboard-page .estado-vazio {
+    padding: 36px 16px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+    background: var(--surface-soft);
+    text-align: center;
+}
+
+body.dashboard-page .empty-state span {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+}
+
+body.dashboard-page .empty-state p,
+body.dashboard-page .estado-vazio p {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 13.5px;
+}
+
+body.dashboard-page .estado-vazio h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 16px;
+}
+
+/* ---------- Telas de ação (escolha / resumo) ---------- */
+
+body.dashboard-page .compra-escolha li {
+    transition: border-color 0.15s, background 0.15s;
+}
+
+body.dashboard-page .compra-escolha li:hover {
+    border-color: color-mix(in srgb, var(--green) 50%, var(--border));
+    background: var(--surface);
+}
+
+body.dashboard-page .compra-resumo {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-soft);
+}
+
+body.dashboard-page .compra-resumo dt {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+body.dashboard-page .compra-item {
+    border-radius: 12px;
+}
+
+/* ---------- Relatórios ---------- */
+
+body.dashboard-page .relatorio-card {
+    margin: 0;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--raio-grande);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+body.dashboard-page .relatorio-card h2 {
+    margin: 0 0 6px;
+    color: var(--text);
+    font-size: 17px;
+}
+
+body.dashboard-page .relatorio-card > p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+body.dashboard-page .resumo-item {
+    border-color: var(--border);
+    border-radius: var(--raio-grande);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+body.dashboard-page .resumo-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-elevada);
+}
+
+body.dashboard-page .resumo-item strong {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+body.dashboard-page .resumo-valor {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+body.dashboard-page .barras-mes {
+    border-bottom-color: var(--border-strong);
+}
+
+body.dashboard-page .coluna-barra {
+    border-radius: 6px 6px 0 0;
+    transition: filter 0.15s;
+}
+
+body.dashboard-page .coluna-barra:hover {
+    filter: brightness(1.08);
+}
+
+body.dashboard-page .nome-mes {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+body.dashboard-page .relatorio-vazio {
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--raio);
+    background: var(--surface-soft);
+    color: var(--muted);
+    text-align: center;
+}
+
+body.dashboard-page .navegacao-relatorio {
+    gap: 10px;
+}
+
+/* ---------- Seleção de linha / joinhas ---------- */
+
+body.dashboard-page .dica-selecao {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--surface-soft);
+}
+
+body.dashboard-page .botao-joinha {
+    width: 44px;
+    height: 42px;
+    border-radius: var(--raio);
+}
+
+/* ---------- Celular ---------- */
+
+@media (max-width: 760px) {
+    body.dashboard-page .welcome-panel {
+        padding: 20px 20px 20px 22px;
+    }
+
+    body.dashboard-page .panel-card,
+    body.dashboard-page .relatorio-card {
+        padding: 16px;
+    }
+
+    body.dashboard-page .compra-acoes-topo > * {
+        flex: 1 1 auto;
+    }
+
+    body.dashboard-page .compra-acoes-topo .botao-joinha {
+        flex: 0 0 44px;
+    }
+
+    body.dashboard-page .filtros-produtos {
+        padding: 14px;
+    }
+
+    body.dashboard-page .acoes-formulario {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    body.dashboard-page .acoes-formulario > * {
+        width: 100%;
+    }
+}
+
+/* Linha selecionada mantém o destaque mesmo com o mouse em cima */
+body.dashboard-page .tabela-selecionavel tbody tr.linha-selecionada td,
+body.dashboard-page .tabela-selecionavel tbody tr.linha-selecionada:hover td {
+    background: var(--green-soft);
+}
+
+body.dashboard-page .tabela-selecionavel tbody tr.linha-selecionavel {
+    cursor: pointer;
+}
+
+/* Telas de acesso: preserva o visual próprio dos campos */
+body.auth-page .auth-form input:not([type="hidden"]) {
+    min-height: 46px;
+    background-color: var(--surface-soft);
+}
+
+body.auth-page .auth-form input:not([type="hidden"]):focus {
+    background-color: var(--surface);
+}
+
+body.auth-page .auth-botao {
+    border-radius: var(--raio);
+    font-weight: 700;
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+body.auth-page .auth-botao:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(21, 128, 61, 0.28);
+}
+
+/* Nível do estoque na lista de produtos */
+body.dashboard-page .nivel-estoque {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 130px;
+}
+
+body.dashboard-page .nivel-estoque-topo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-variant-numeric: tabular-nums;
+}
+
+body.dashboard-page .nivel-estoque-barra {
+    display: block;
+    width: 100%;
+    max-width: 160px;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--chart-track);
+}
+
+body.dashboard-page .nivel-estoque-barra > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #22c55e, #15803d);
+}
+
+body.dashboard-page .nivel-estoque-barra > span.nivel-baixo {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+/* Quantidades com sinal no histórico */
+body.dashboard-page .quantidade-entrada {
+    color: var(--success-text);
+    font-variant-numeric: tabular-nums;
+}
+
+body.dashboard-page .quantidade-saida {
+    color: var(--danger-text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Relatórios: o espaçamento já vem do "gap" do conteúdo */
+body.dashboard-page .relatorios-conteudo .welcome-panel {
+    margin-bottom: 0;
+}
+
+/* Painel do formulário de produto sem padding extra herdado */
+body.dashboard-page .formulario-produto {
+    margin-bottom: 0;
+}
+
+body.dashboard-page .form-produto {
+    margin-top: 0;
+}
+
+/* Relatórios: faixa colorida à esquerda de cada resumo */
+body.dashboard-page .resumo-item {
+    border-left: 4px solid var(--border-strong);
+}
+
+body.dashboard-page .resumo-item.entradas {
+    border-left-color: #22c55e;
+}
+
+body.dashboard-page .resumo-item.saidas {
+    border-left-color: #ef4444;
+}
+
+/* Relatórios: o espaçamento entre blocos vem só do "gap" */
+body.dashboard-page .relatorios-conteudo > * {
+    margin: 0;
+}
+
+/* Botões soltos no fim de um painel (ex.: histórico) sem linha dupla */
+body.dashboard-page .panel-card > .acoes-formulario:last-child {
+    margin-top: 18px;
+    padding-top: 0;
+    border-top: none;
+}
+
+/* Celular: filtros empilhados sem "esticar" a altura dos campos
+   (o flex-basis de 240px virava altura quando a direção é coluna) */
+@media (max-width: 760px) {
+    body.dashboard-page .filtros-produtos > *,
+    body.dashboard-page .filtros-produtos .campo-produto,
+    body.dashboard-page .compra-filtros .campo-produto,
+    body.dashboard-page .compra-filtros .compra-filtro-usuario {
+        flex: 0 0 auto;
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.dashboard-page .filtros-produtos .acoes-filtros {
+        flex-direction: row;
+    }
+
+    body.dashboard-page .filtros-produtos .acoes-filtros > * {
+        flex: 1 1 0;
+        width: auto;
+    }
+
+    body.dashboard-page .panel-header {
+        flex-wrap: wrap;
+    }
 }

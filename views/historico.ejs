@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
@@ -6,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Histórico de movimentações | EstoquePro</title>
     <link rel="stylesheet" href="/style.css">
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script>try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema-estoque') || 'light'); } catch (e) {}</script>
 </head>
 
 <body class="dashboard-page">
@@ -19,14 +20,32 @@
                 tituloPagina: 'Histórico de movimentações'
             }) %>
 
-            <section class="panel-card">
-
+            <section class="welcome-panel">
                 <div>
+                    <p class="welcome-label">MOVIMENTAÇÕES</p>
                     <h2>Registro de movimentações</h2>
                     <p>Consulte as entradas e saídas registradas no estoque.</p>
                 </div>
 
-               
+                <% if (permissoes.movimentarEstoque) { %>
+                    <div class="compra-acoes-topo">
+                        <a href="/movimentacoes/nova" class="primary-link">
+                            ⇄ Nova movimentação
+                        </a>
+                    </div>
+                <% } %>
+            </section>
+
+            <section class="panel-card">
+
+                <div class="panel-header">
+                    <div>
+                        <h2>Movimentações</h2>
+                        <p>Filtre por tipo ou período para encontrar um registro.</p>
+                    </div>
+                    <span class="codigo-produto">Total: <%= movimentacoes.length %></span>
+                </div>
+
                 <form action="/movimentacoes" method="GET" class="filtros-produtos">
 
                     <div class="campo-produto">
@@ -77,15 +96,16 @@
 
                 </form>
 
+                <% if (movimentacoes.length === 0) { %>
 
-                <div class="table-wrapper">
-
-                    <% if (movimentacoes.length === 0) { %>
-
+                    <div class="empty-state">
+                        <span>◷</span>
                         <p>Nenhuma movimentação encontrada para esse filtro.</p>
+                    </div>
 
-                    <% } else { %>
+                <% } else { %>
 
+                    <div class="table-wrapper">
                         <table class="dashboard-table">
                             <thead>
                                 <tr>
@@ -98,37 +118,41 @@
                             </thead>
 
                             <tbody>
-                                <% movimentacoes.forEach(movimentacao => { %>
+                                <% movimentacoes.forEach(movimentacao => {
+                                    // Há registros antigos gravados como "entrada " (minúsculo/espaço)
+                                    const entrada = String(movimentacao.tipo || '').trim().toLowerCase() === 'entrada';
+                                %>
                                     <tr>
-                                        <td>
+                                        <td class="compra-nowrap">
                                             <%= new Date(movimentacao.data).toLocaleString('pt-BR') %>
                                         </td>
 
                                         <td>
-                                            MAT<%= String(movimentacao.produtos.id).padStart(3, '0') %>
+                                            <span class="codigo-chip">MAT<%= String(movimentacao.produtos.id).padStart(3, '0') %></span>
                                         </td>
 
                                         <td>
-                                            <%= movimentacao.produtos.nome %>
+                                            <strong><%= movimentacao.produtos.nome %></strong>
                                         </td>
 
                                         <td>
-                                            <span class="<%= movimentacao.tipo === 'Entrada' ? 'status-entrada' : 'status-saida' %>">
-                                                <%= movimentacao.tipo %>
+                                            <span class="<%= entrada ? 'status-entrada' : 'status-saida' %>">
+                                                <%= entrada ? '↑ Entrada' : '↓ Saída' %>
                                             </span>
                                         </td>
 
                                         <td>
-                                            <%= movimentacao.quantidade %>
+                                            <strong class="<%= entrada ? 'quantidade-entrada' : 'quantidade-saida' %>">
+                                                <%= entrada ? '+' : '−' %><%= movimentacao.quantidade %>
+                                            </strong>
                                         </td>
                                     </tr>
                                 <% }) %>
                             </tbody>
                         </table>
+                    </div>
 
-                    <% } %>
-
-                </div>
+                <% } %>
 
                 <div class="acoes-formulario">
                     <a href="/" class="botao-secundario">Voltar ao início</a>
@@ -136,6 +160,10 @@
                 </div>
 
             </section>
+
+            <footer class="dashboard-footer">
+                Sistema de Controle de Estoque · MVP
+            </footer>
 
         </main>
     </div>
